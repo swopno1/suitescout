@@ -86,8 +86,8 @@ Screenshots: _to be added once the first live run lands (Friday)._
 
 ```bash
 cp .env.example .env   # add VULTR_INFERENCE_API_KEY
-npm install
-npm run dev            # http://localhost:3000
+pnpm install
+pnpm dev            # http://localhost:3000
 ```
 
 First boot seeds the 20 verified batch-3 resorts (source: the founder's
