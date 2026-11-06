@@ -1,12 +1,13 @@
 # SuiteScout — the resort sales-ops agent
 
-> **Scaffold status (Thu Nov 6, 2026).** This repo is the working scaffold
-> for the Vultr Agent Rush Hackathon (Challenge 2, Sales Operations).
-> The shell is real — board, run view, prospect detail, settings, API,
-> SQLite store, Vultr inference client — but **the agent loop does not
-> run yet**. Runs created now are queued stubs; research, scoring,
-> drafting and follow-ups land Friday (see `docs/BUILD-SPEC.md` §14).
-> Nothing here is faked as a working agent.
+> **Agent loop LIVE (Fri Nov 6, 2026).** The five-step loop runs for
+> real — live fetch + extraction, deterministic rubric scoring, LLM
+> drafting (template fallback when no inference key is set), CRM board
+> logging, follow-up drafting. Verified live on the demo set: The Cox
+> Beach Resort 80 Hot, Sundori Eco Resort 70 Hot, Balishira Resort 55
+> Warm, Giriraj Resort 55 Warm — the spec's four worked examples,
+> reproduced from live fetches. Scoring regression test:
+> `node scripts/scoring-test.ts` (6/6).
 
 ## What SuiteScout is
 

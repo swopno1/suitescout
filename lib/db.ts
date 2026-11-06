@@ -34,6 +34,7 @@ function initSchema(db: Database.Database): void {
       location TEXT,
       source TEXT NOT NULL DEFAULT 'manual',
       contact TEXT,
+      research_sources TEXT,
       status TEXT NOT NULL DEFAULT 'new',
       fit_score INTEGER,
       score_band TEXT,
@@ -74,6 +75,17 @@ function initSchema(db: Database.Database): void {
   `);
 }
 
+/** Lightweight migration for DBs created before a column existed.
+ *  Adds `research_sources` to prospects when it is missing. */
+function migrate(db: Database.Database): void {
+  const cols = db.prepare("PRAGMA table_info(prospects)").all() as {
+    name: string;
+  }[];
+  if (!cols.some((c) => c.name === "research_sources")) {
+    db.exec("ALTER TABLE prospects ADD COLUMN research_sources TEXT");
+  }
+}
+
 function seedIfEmpty(db: Database.Database): void {
   const row = db
     .prepare("SELECT COUNT(*) AS n FROM prospects")
@@ -81,14 +93,15 @@ function seedIfEmpty(db: Database.Database): void {
   if (row.n > 0) return;
   const insert = db.prepare(
     `INSERT INTO prospects
-      (name, website, location, source, contact, status, demo, created_at, updated_at)
-     VALUES (@name, @website, @location, 'batch3', NULL, 'new', @demo, @now, @now)`,
+      (name, website, location, source, contact, research_sources, status, demo, created_at, updated_at)
+     VALUES (@name, @website, @location, 'batch3', NULL, @research_sources, 'new', @demo, @now, @now)`,
   );
   seedProspects((p, now) => {
     insert.run({
       name: p.name,
       website: p.website,
       location: p.location,
+      research_sources: p.sources ? JSON.stringify(p.sources) : null,
       demo: p.demo ? 1 : 0,
       now,
     });
@@ -102,6 +115,7 @@ export function getDb(): Database.Database {
     const db = new Database(file);
     db.pragma("journal_mode = WAL");
     initSchema(db);
+    migrate(db);
     seedIfEmpty(db);
     globalThis.__suitescoutDb = db;
   }
@@ -117,6 +131,7 @@ interface ProspectRow {
   location: string | null;
   source: string;
   contact: string | null;
+  research_sources: string | null;
   status: string;
   fit_score: number | null;
   score_band: string | null;
@@ -135,6 +150,9 @@ function mapProspect(row: ProspectRow): Prospect {
     location: row.location,
     source: row.source,
     contact: row.contact,
+    research_sources: row.research_sources
+      ? (JSON.parse(row.research_sources) as string[])
+      : null,
     status: row.status as ProspectStatus,
     fit_score: row.fit_score,
     score_band: row.score_band as ScoreBand | null,
@@ -238,6 +256,34 @@ export function updateProspectStatus(
   return getProspect(id);
 }
 
+/** Store the agent's research fact sheet + score on the prospect. */
+export function updateProspectResearch(
+  id: number,
+  research: import("./types").ResearchData,
+  fitScore: number,
+  band: ScoreBand,
+  reasons: string[],
+): Prospect | null {
+  const db = getDb();
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `UPDATE prospects
+        SET research = ?, fit_score = ?, score_band = ?, score_reasons = ?, updated_at = ?
+       WHERE id = ?`,
+    )
+    .run(
+      JSON.stringify(research),
+      fitScore,
+      band,
+      JSON.stringify(reasons),
+      now,
+      id,
+    );
+  if (result.changes === 0) return null;
+  return getProspect(id);
+}
+
 // ---- Runs ----
 
 export function createRun(
@@ -273,6 +319,27 @@ export function getLatestRun(): Run | null {
   return row ? mapRun(row) : null;
 }
 
+/** Persist a run's step trace / status. The agent calls this after
+ *  every step so the run view polls live progress. */
+export function updateRun(
+  id: number,
+  patch: { steps?: RunStep[]; status?: Run["status"] },
+): Run | null {
+  const db = getDb();
+  const current = getRun(id);
+  if (!current) return null;
+  const steps = patch.steps ?? current.steps;
+  const status = patch.status ?? current.status;
+  const finishedAt =
+    status === "done" || status === "failed"
+      ? (current.finished_at ?? new Date().toISOString())
+      : current.finished_at;
+  db.prepare(
+    "UPDATE runs SET steps = ?, status = ?, finished_at = ? WHERE id = ?",
+  ).run(JSON.stringify(steps), status, finishedAt, id);
+  return getRun(id);
+}
+
 export function listRunsForProspect(prospectId: number): Run[] {
   const db = getDb();
   return (
@@ -301,6 +368,25 @@ export function listDraftsForProspect(prospectId: number): Draft[] {
     .all(prospectId) as Draft[];
 }
 
+export function createDraft(input: {
+  prospectId: number;
+  channel: Draft["channel"];
+  subject: string | null;
+  body: string;
+}): Draft {
+  const db = getDb();
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `INSERT INTO drafts (prospect_id, channel, subject, body, status, created_at)
+       VALUES (?, ?, ?, ?, 'draft', ?)`,
+    )
+    .run(input.prospectId, input.channel, input.subject, input.body, now);
+  const created = getDraft(Number(result.lastInsertRowid));
+  if (!created) throw new Error("Failed to create draft");
+  return created;
+}
+
 export function approveDraft(id: number): Draft | null {
   const db = getDb();
   const draft = db.prepare("SELECT * FROM drafts WHERE id = ?").get(id) as
@@ -321,6 +407,25 @@ export function listFollowupsForProspect(prospectId: number): Followup[] {
       "SELECT * FROM followups WHERE prospect_id = ? ORDER BY id DESC",
     )
     .all(prospectId) as Followup[];
+}
+
+export function createFollowup(input: {
+  prospectId: number;
+  draftId: number | null;
+  dueAfterDays: number;
+}): Followup {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT INTO followups (prospect_id, draft_id, due_after_days, status)
+       VALUES (?, ?, ?, 'pending')`,
+    )
+    .run(input.prospectId, input.draftId, input.dueAfterDays);
+  const created = db
+    .prepare("SELECT * FROM followups WHERE id = ?")
+    .get(Number(result.lastInsertRowid)) as Followup | undefined;
+  if (!created) throw new Error("Failed to create follow-up");
+  return created;
 }
 
 // ---- Settings (key/value) ----

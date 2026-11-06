@@ -5,12 +5,17 @@
 // NO phone numbers, NO email addresses — contact details stay out of
 // this public repo. The demo trio (the video runs these) is flagged
 // demo=true.
+// `sources` (only on the four worked-example prospects) are the public
+// Facebook page + directory/listing URLs the human researchers used —
+// public web pages, not PII. The agent fetches these live; they are how
+// it verifies OTA/phone/demand facts for a dead or missing website.
 
 export interface SeedProspect {
   name: string;
   website: string | null;
   location: string;
   demo: boolean;
+  sources?: string[];
 }
 
 export const SEED_PROSPECTS: SeedProspect[] = [
@@ -19,6 +24,11 @@ export const SEED_PROSPECTS: SeedProspect[] = [
     website: "http://sundoriecoresort.com/",
     location: "Mongla, Bagerhat (Sundarbans gateway)",
     demo: true,
+    sources: [
+      "https://www.facebook.com/sundoriecoresrot/",
+      "https://sundarbantourism.org/sundori-eco-resort-sundarban/",
+      "https://chologhuri.com/tour/sundori-eco-resort-sundarban-tour-package",
+    ],
   },
   {
     name: "Gol Kanon Eco Resort",
@@ -31,12 +41,18 @@ export const SEED_PROSPECTS: SeedProspect[] = [
     website: "https://thecoxbeachresort.com/",
     location: "Cox's Bazar",
     demo: true,
+    sources: [
+      "https://www.facebook.com/thecoxbeachresortbd",
+      "https://www.hotels1000.com/BD/Cox%27s-Bazar/663954910465221/The-Cox-Beach-Resort",
+      "https://wanderlog.com/hotels/details/145495/the-cox-beach-resort",
+    ],
   },
   {
     name: "Balishira Resort",
     website: "http://www.balishiraresort.com/",
     location: "Sreemangal, Moulvibazar",
     demo: true,
+    sources: ["http://www.balishiraresort.com/our-rooms"],
   },
   {
     name: "Tilagaon Eco Village",
@@ -49,6 +65,11 @@ export const SEED_PROSPECTS: SeedProspect[] = [
     website: null,
     location: "Bandarban",
     demo: false,
+    sources: [
+      "https://www.facebook.com/girirajresort.bandarban/",
+      "https://www.top-rated.online/cities/Laimi+Para/place/p/16594871/Giriraj+Resort%2C+Bandarban",
+      "https://www.bangladeshhotels.net/en/bandarban-hotels-323457/",
+    ],
   },
   {
     name: "Nilanjana Boat Club & Resort",

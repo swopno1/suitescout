@@ -37,6 +37,7 @@ export interface ResearchData {
   contact_channels: string[];
   languages: string[];
   room_count: number | null;
+  room_types: string[];
   location: string | null;
   social_links: string[];
   mobile_friendly: boolean | "unknown";
@@ -51,6 +52,10 @@ export interface Prospect {
   location: string | null;
   source: string;
   contact: string | null;
+  /** Public research sources (Facebook page + directory/listing URLs)
+   *  seeded from the batch-3 research file. Public pages only — never
+   *  phone numbers or emails. */
+  research_sources: string[] | null;
   status: ProspectStatus;
   fit_score: number | null;
   score_band: ScoreBand | null;

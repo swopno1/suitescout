@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLatestRun, getProspect, getRun, listProspects } from "@/lib/db";
 import type { RunStep } from "@/lib/types";
 import StartRunButton from "@/components/StartRunButton";
+import RunAutoRefresh from "@/components/RunAutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -83,14 +84,16 @@ export default async function RunPage({
         every step. This is the demo&apos;s hero shot.
       </p>
 
-      {run && run.status === "queued" && (
+      {run && (run.status === "queued" || run.status === "running") && (
         <div className="mb-4 rounded-lg border border-amber-600 bg-amber-50 p-3 text-sm">
-          <strong>Scaffold stub.</strong> This run is queued — the agent
-          executor lands Friday. No agent has run yet, no research was
-          fetched, and no draft was written. The five steps below are the
-          plan, not a result.
+          <strong>Agent is working.</strong> The five steps update live
+          below — research, score, drafts, board log and follow-up. This
+          page refreshes itself until the run finishes.
         </div>
       )}
+      <RunAutoRefresh
+        active={!!run && (run.status === "queued" || run.status === "running")}
+      />
 
       {run ? (
         <div className="mb-6">

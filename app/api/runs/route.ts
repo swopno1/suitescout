@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { createRun, getProspect } from "@/lib/db";
+import { runAgent } from "@/lib/agent";
 import { AGENT_STEPS, type RunStep } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Scaffold stub — creates the run record with the five agent-loop steps
- * in `pending` and status `queued`. The agent executor lands Friday;
- * nothing here fetches, scores, or drafts anything. A queued run is an
- * honest placeholder, not a working agent.
+ * Start an agent run. Creates the run with the five agent-loop steps
+ * in `pending`, then executes the loop in the background (Next `after`)
+ * so the client can poll GET /api/runs/:id for the live trace.
  */
 export async function POST(req: NextRequest) {
   const body: unknown = await req.json().catch(() => null);
@@ -23,24 +24,22 @@ export async function POST(req: NextRequest) {
   if (!prospect) {
     return NextResponse.json({ error: "prospect not found" }, { status: 404 });
   }
-  const steps: RunStep[] = AGENT_STEPS.map((name, i) => ({
+  const steps: RunStep[] = AGENT_STEPS.map((name) => ({
     name,
     status: "pending",
     started: null,
     finished: null,
     evidence: [],
     output: null,
-    note:
-      i === 0
-        ? "TODO: agent execution lands Friday — this run is queued; no agent has run yet."
-        : null,
+    note: null,
   }));
   const run = createRun(prospectId, steps);
-  return NextResponse.json(
-    {
-      run,
-      note: "Scaffold stub: run queued. Agent execution lands Friday.",
-    },
-    { status: 201 },
-  );
+  after(async () => {
+    try {
+      await runAgent(run.id);
+    } catch (err) {
+      console.error(`runAgent(${run.id}) failed:`, err);
+    }
+  });
+  return NextResponse.json({ run }, { status: 201 });
 }
