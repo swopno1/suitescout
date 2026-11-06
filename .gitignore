@@ -8,3 +8,5 @@ data/*.db-shm
 .env
 .env.local
 .env*.local
+
+docs/*
