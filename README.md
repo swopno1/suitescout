@@ -104,6 +104,22 @@ docker compose up -d --build
 # App on http://<vm-ip>:3000 — data persists in ./data (SQLite volume).
 ```
 
+## Login
+
+The whole app (every page + every API route) sits behind HTTP Basic
+Auth — one shared login, username `demo`, password from `APP_PASSWORD`
+in `.env`. If `APP_PASSWORD` is unset or empty the app answers 401 to
+everything (fail closed, never open).
+
+```bash
+# On the VM, after editing .env (set APP_PASSWORD to a strong value):
+docker compose up -d   # recreate so the container picks up the new env
+# (plain `docker compose restart` does NOT reload .env)
+```
+
+Judges use the demo login published in the submission (`demo` +
+the password from the submission). Never commit `.env`.
+
 ## Environment
 
 | Variable | Purpose |
@@ -111,6 +127,8 @@ docker compose up -d --build
 | `VULTR_INFERENCE_API_KEY` | Vultr Serverless Inference API key (required for LLM calls). |
 | `VULTR_INFERENCE_MODEL` | Default model id (default `deepseek-v4.1-flash-1017`). |
 | `DATABASE_URL` | SQLite path (default `./data/suitescout.db`). |
+| `APP_URL` | Public URL of the deployed app. |
+| `APP_PASSWORD` | Login password (Basic Auth, username `demo`). Unset/empty = the app answers 401 to everything. |
 
 ## API
 
