@@ -35,10 +35,7 @@ export default function AddProspectForm() {
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="mb-6 flex flex-wrap items-end gap-2 rounded-lg border border-stone-300 bg-white p-3"
-    >
+    <form onSubmit={submit} className="card mb-6 flex flex-wrap items-end gap-2">
       <label className="flex min-w-44 flex-1 flex-col text-xs font-semibold">
         Resort name *
         <input
@@ -46,7 +43,7 @@ export default function AddProspectForm() {
           onChange={(e) => setName(e.target.value)}
           required
           placeholder="e.g. Coral Bay Resort"
-          className="mt-1 rounded border border-stone-300 px-2 py-1.5 text-sm font-normal"
+          className="input mt-1"
         />
       </label>
       <label className="flex min-w-44 flex-1 flex-col text-xs font-semibold">
@@ -55,7 +52,7 @@ export default function AddProspectForm() {
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
           placeholder="https://example.com"
-          className="mt-1 rounded border border-stone-300 px-2 py-1.5 text-sm font-normal"
+          className="input mt-1"
         />
       </label>
       <label className="flex min-w-40 flex-1 flex-col text-xs font-semibold">
@@ -64,14 +61,10 @@ export default function AddProspectForm() {
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="e.g. Cox's Bazar"
-          className="mt-1 rounded border border-stone-300 px-2 py-1.5 text-sm font-normal"
+          className="input mt-1"
         />
       </label>
-      <button
-        type="submit"
-        disabled={busy}
-        className="rounded bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-      >
+      <button type="submit" disabled={busy} className="btn-primary">
         {busy ? "Adding…" : "Add prospect"}
       </button>
       {error && <p className="w-full text-sm text-red-700">{error}</p>}

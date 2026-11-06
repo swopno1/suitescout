@@ -10,5 +10,86 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     Roboto,
+    "Helvetica Neue",
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: #a94e24;
+  color: #fff;
+}
+
+/* Visible keyboard focus everywhere (brand ring). */
+:focus-visible {
+  outline: 2px solid #226355;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@layer components {
+  /* Shared chrome — one look for cards, buttons, inputs, badges. */
+  .card {
+    @apply rounded-xl border border-stone-300/80 bg-white p-4 shadow-[0_1px_2px_rgba(28,36,32,0.06)];
+  }
+  .card-hover {
+    @apply transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(29,58,47,0.12)];
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(29,58,47,0.25)] transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(169,78,36,0.3)] transition-colors hover:bg-[#8f421e] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .input {
+    @apply rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm font-normal text-ink placeholder:text-stone-400 focus:border-brand;
+  }
+  .label {
+    @apply text-xs font-semibold uppercase tracking-wide text-stone-500;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
+  }
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500;
+  }
+  .page-title {
+    @apply text-2xl font-extrabold tracking-tight text-ink;
+  }
+  .page-sub {
+    @apply mt-0.5 text-sm text-stone-600;
+  }
+  .mono-block {
+    @apply whitespace-pre-wrap rounded-lg bg-stone-100/80 p-3 font-mono text-[13px] leading-relaxed text-stone-800;
+  }
+}
+
+/* Live-run pulse dot (motion-safe only). */
+@keyframes scout-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background-color: currentColor;
+    animation: scout-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
 }

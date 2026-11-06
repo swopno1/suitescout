@@ -6,7 +6,7 @@ WORKDIR /app
 # Build tools needed to compile better-sqlite3 (native module).
 RUN apk add --no-cache python3 make g++
 
-# pnpm — pinned to the same major as packageManager in package.json.
+# pnpm — exact pin matching packageManager in package.json.
 RUN npm install -g pnpm@12.16.1
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

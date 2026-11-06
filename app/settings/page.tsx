@@ -17,40 +17,48 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold">Settings</h1>
-      <p className="mb-4 text-sm text-stone-600">
+      <h1 className="page-title">Settings</h1>
+      <p className="page-sub mb-4">
         Model and follow-up defaults for the agent. Changes apply to the
         next run.
       </p>
 
       <div className="mb-4 grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-stone-300 bg-white p-4">
-          <h2 className="mb-2 text-lg font-semibold">Inference</h2>
-          <p className="text-sm">
+        <div className="card">
+          <h2 className="mb-2 text-lg font-bold">Inference</h2>
+          <p className="flex items-center gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={`h-2.5 w-2.5 rounded-full ${keyConfigured ? "bg-brand" : "bg-red-600"}`}
+            />
             Vultr Serverless Inference key:{" "}
             <strong>
-              {keyConfigured ? "configured" : "NOT SET — add VULTR_INFERENCE_API_KEY to .env"}
+              {keyConfigured
+                ? "configured"
+                : "not set, add VULTR_INFERENCE_API_KEY to .env"}
             </strong>
           </p>
-          <p className="mt-1 text-sm">
+          <p className="mt-2 text-sm">
             Endpoint:{" "}
-            <code className="rounded bg-stone-100 px-1">
+            <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">
               https://api.vultrinference.com/v1
             </code>
           </p>
-          <p className="mt-1 text-sm">
-            Effective model: <strong>{currentModel}</strong>
+          <p className="mt-2 text-sm">
+            Effective model:{" "}
+            <strong className="font-mono text-[13px]">{currentModel}</strong>
           </p>
         </div>
-        <div className="rounded-lg border border-stone-300 bg-white p-4">
-          <h2 className="mb-2 text-lg font-semibold">Seed data</h2>
+        <div className="card">
+          <h2 className="mb-2 text-lg font-bold">Seed data</h2>
           <p className="text-sm">
-            {prospectCount} prospects seeded from the verified batch-3
-            research (source: batch3). No contact details are stored in
-            this repo.
+            <strong className="tabular-nums">{prospectCount}</strong>{" "}
+            prospects seeded from the verified batch-3 research. No
+            contact details are stored in this repo.
           </p>
-          <p className="mt-1 text-sm text-stone-600">
-            Build spec: <code>docs/BUILD-SPEC.md</code> in the repo.
+          <p className="mt-2 text-sm text-stone-600">
+            Product docs live alongside the repo but are never
+            committed. See BRAND.md for the visual identity.
           </p>
         </div>
       </div>

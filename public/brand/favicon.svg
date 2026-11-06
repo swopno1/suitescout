@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>SuiteScout favicon</title>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#1d3a2f"/>
+  <circle cx="27" cy="27" r="14" fill="#f5efe3"/>
+  <polygon points="19,38 26,24 33,38" fill="#226355"/>
+  <polygon points="24,38 30,26 35,38" fill="#a94e24"/>
+  <circle cx="35" cy="19" r="2.6" fill="#a94e24"/>
+  <line x1="37" y1="37" x2="48" y2="48" stroke="#a94e24" stroke-width="6" stroke-linecap="round"/>
+</svg>

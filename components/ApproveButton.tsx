@@ -30,7 +30,7 @@ export default function ApproveButton({ draftId }: { draftId: number }) {
       <button
         onClick={approve}
         disabled={busy}
-        className="rounded bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+        className="btn-primary !px-3 !py-1.5 !text-xs"
       >
         {busy ? "Approving…" : "Approve draft"}
       </button>

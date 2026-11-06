@@ -111,7 +111,6 @@ docker compose up -d --build
 | `VULTR_INFERENCE_API_KEY` | Vultr Serverless Inference API key (required for LLM calls). |
 | `VULTR_INFERENCE_MODEL` | Default model id (default `deepseek-v4.1-flash-1017`). |
 | `DATABASE_URL` | SQLite path (default `./data/suitescout.db`). |
-| `APP_URL` | Public URL of the deployed app. |
 
 ## API
 
