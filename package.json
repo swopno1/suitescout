@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
-  "description": "SuiteScout — resort sales-ops agent for ViveReply Suite (Vultr Agent Rush Hackathon, Challenge 2)",
+  "description": "SuiteScout \u2014 resort sales-ops agent for ViveReply Suite (Vultr Agent Rush Hackathon, Challenge 2)",
   "scripts": {
     "build": "next build",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite-to-postgres.ts",
@@ -31,5 +31,7 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.0.0",
     "typescript": "^5.7.2"
-  }
+  },
+  "license": "MIT",
+  "author": "Md Amir Hossain"
 }
