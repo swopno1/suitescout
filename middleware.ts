@@ -1,54 +1,44 @@
-// SuiteScout login wall — HTTP Basic Auth, one shared secret.
-// Protects every route (all pages + all /api/* routes). Fail closed:
-// if APP_PASSWORD is unset or empty, everything returns 401 — the
-// app never serves unauthenticated. Fixed username `demo`; the
-// password is the shared secret from APP_PASSWORD (set in .env on
-// the VM; judges use the demo login published in the submission).
+// SuiteScout login wall — HMAC-signed session cookie (see lib/session.ts).
+// Protects every route except /login, the login API, and static assets.
+// Fail closed: no valid session → API callers get JSON 401, page visits
+// redirect to /login. Unset APP_PASSWORD means no session can ever
+// verify, so the app never serves unauthenticated.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SESSION_COOKIE, verifySessionValue } from "@/lib/session";
 
-const USERNAME = "demo";
+const PUBLIC = [
+  /^\/login$/,
+  /^\/api\/auth\/login$/,
+  /^\/_next\//,
+  /^\/brand\//,
+  /^\/favicon\.ico$/,
+];
 
-function unauthorized(): NextResponse {
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="SuiteScout"' },
-  });
-}
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+  if (PUBLIC.some((re) => re.test(pathname))) return NextResponse.next();
 
-/** Constant-time string comparison (avoids leaking the secret length
- *  through timing). */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  const secret = process.env.APP_PASSWORD;
+  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  if (
+    secret &&
+    session &&
+    (await verifySessionValue(secret, session))
+  ) {
+    return NextResponse.next();
   }
-  return diff === 0;
-}
-
-export function middleware(request: NextRequest): NextResponse {
-  const password = process.env.APP_PASSWORD;
-  // Fail closed: no password configured → deny everything.
-  if (!password) return unauthorized();
-
-  const auth = request.headers.get("authorization");
-  if (!auth || !auth.startsWith("Basic ")) return unauthorized();
-
-  let decoded: string;
-  try {
-    decoded = atob(auth.slice("Basic ".length));
-  } catch {
-    return unauthorized();
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "Authentication required." },
+      { status: 401 },
+    );
   }
-  const sep = decoded.indexOf(":");
-  if (sep === -1) return unauthorized();
-  const user = decoded.slice(0, sep);
-  const pass = decoded.slice(sep + 1);
-  if (user !== USERNAME || !safeEqual(pass, password)) {
-    return unauthorized();
-  }
-  return NextResponse.next();
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = "";
+  if (pathname !== "/") url.searchParams.set("next", pathname);
+  return NextResponse.redirect(url);
 }
 
 export const config = {

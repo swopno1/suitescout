@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import LogoutButton from "@/components/LogoutButton";
 
 const LINKS = [
   { href: "/", label: "Board" },
@@ -17,6 +18,8 @@ function isActive(pathname: string, href: string): boolean {
 
 export default function Nav() {
   const pathname = usePathname();
+  // Logged-out visitors only ever see /login — no nav, no logout.
+  if (pathname === "/login") return null;
   return (
     <nav className="flex items-center gap-1 text-sm font-semibold">
       {LINKS.map((l) => {
@@ -36,6 +39,7 @@ export default function Nav() {
           </Link>
         );
       })}
+      <LogoutButton />
     </nav>
   );
 }

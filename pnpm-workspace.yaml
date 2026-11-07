@@ -2,3 +2,8 @@ allowBuilds:
   better-sqlite3: true
   # tsx runs on esbuild; its postinstall builds the binary.
   esbuild: true
+
+overrides:
+  # next@15.5.29 bundles postcss 8.4.31 (GHSA-6g55-p6wh-862q,
+  # GHSA-r28c-9q8g-f849) — pin the whole tree to the patched 8.x.
+  postcss: 8.5.32

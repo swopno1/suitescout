@@ -9,6 +9,7 @@ import { matchesProspect } from "@/lib/board-search";
 import { domainOf } from "@/lib/prospect-label";
 import AddProspectForm from "@/components/AddProspectForm";
 import BatchRunButton from "@/components/BatchRunButton";
+import BoardColumn from "@/components/BoardColumn";
 
 export const dynamic = "force-dynamic";
 
@@ -218,35 +219,23 @@ export default async function BoardPage({
         {PROSPECT_STATUSES.map((status) => {
           const cards = prospects.filter((p) => p.status === status);
           return (
-            <section
+            <BoardColumn
               key={status}
-              aria-label={`${PROSPECT_STATUS_LABELS[status]} prospects`}
-              className="flex h-[62vh] min-h-80 flex-col rounded-xl bg-stone-800/[0.05] p-2"
+              label={PROSPECT_STATUS_LABELS[status]}
+              dotClass={COLUMN_DOT[status]}
+              count={cards.length}
+              listId={`board-col-${status}`}
             >
-              <h2 className="mb-2 flex shrink-0 items-center justify-between px-1.5 pt-1 text-[13px] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <span
-                    aria-hidden="true"
-                    className={`h-2 w-2 rounded-full ${COLUMN_DOT[status]}`}
-                  />
-                  {PROSPECT_STATUS_LABELS[status]}
-                </span>
-                <span className="badge bg-white tabular-nums text-stone-600 shadow-sm">
-                  {cards.length}
-                </span>
-              </h2>
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5">
-                {cards.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-stone-300 px-2 py-4 text-center text-xs text-stone-400">
-                    Nothing here yet
-                  </p>
-                ) : (
-                  cards.map((p) => (
-                    <ProspectCard key={p.id} prospect={p} />
-                  ))
-                )}
-              </div>
-            </section>
+              {cards.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-stone-300 px-2 py-4 text-center text-xs text-stone-400">
+                  Nothing here yet
+                </p>
+              ) : (
+                cards.map((p) => (
+                  <ProspectCard key={p.id} prospect={p} />
+                ))
+              )}
+            </BoardColumn>
           );
         })}
       </div>

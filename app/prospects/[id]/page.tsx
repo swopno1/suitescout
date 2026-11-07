@@ -18,6 +18,7 @@ import type {
 import { PROSPECT_STATUS_LABELS, PROSPECT_STATUSES } from "@/lib/types";
 import ApproveButton from "@/components/ApproveButton";
 import EvaluatePanel from "@/components/EvaluatePanel";
+import SafeLink from "@/components/SafeLink";
 import MarkSentButton from "@/components/MarkSentButton";
 import StartRunButton from "@/components/StartRunButton";
 import StatusChanger from "@/components/StatusChanger";
@@ -148,51 +149,35 @@ function FactSheet({ research }: { research: ResearchData }) {
         ))}
       </dl>
       {research.social_links.length > 0 && (
-        <div className="mt-3">
-          <p className="label mb-1.5">Social links</p>
-          <ul className="flex flex-wrap gap-1.5">
-            {research.social_links.map((url) => (
-              <li key={url} className="max-w-full">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={url}
-                  className="badge max-w-full bg-brand-light text-brand-dark hover:bg-brand hover:text-white"
-                >
-                  <span className="max-w-56 truncate sm:max-w-80">
-                    {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </span>
-                  <span aria-hidden="true">↗</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <LinkPills label="Social links" urls={research.social_links} />
       )}
       {research.sources.length > 0 && (
-        <div className="mt-3">
-          <p className="label mb-1.5">Sources</p>
-          <ul className="flex flex-wrap gap-1.5">
-            {research.sources.map((url) => (
-              <li key={url} className="max-w-full">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={url}
-                  className="badge max-w-full bg-brand-light text-brand-dark hover:bg-brand hover:text-white"
-                >
-                  <span className="max-w-56 truncate sm:max-w-80">
-                    {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </span>
-                  <span aria-hidden="true">↗</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <LinkPills label="Sources" urls={research.sources} />
       )}
+    </div>
+  );
+}
+
+function LinkPills({ label, urls }: { label: string; urls: string[] }) {
+  return (
+    <div className="mt-3">
+      <p className="label mb-1.5">{label}</p>
+      <ul className="flex flex-wrap gap-1.5">
+        {urls.map((url) => (
+          <li key={url} className="max-w-full">
+            <SafeLink
+              href={url}
+              title={url}
+              className="badge max-w-full bg-brand-light text-brand-dark hover:bg-brand hover:text-white"
+            >
+              <span className="max-w-56 truncate sm:max-w-80">
+                {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              </span>
+              <span aria-hidden="true">↗</span>
+            </SafeLink>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -241,14 +226,13 @@ export default async function ProspectDetailPage({
           {prospect.website ? (
             <>
               {" · "}
-              <a
+              <SafeLink
                 href={prospect.website}
-                target="_blank"
-                rel="noreferrer"
+                title={prospect.website}
                 className="break-all font-medium text-brand hover:underline"
               >
                 {prospect.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-              </a>
+              </SafeLink>
             </>
           ) : (
             " · No website on file"

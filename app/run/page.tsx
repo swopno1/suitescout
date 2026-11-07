@@ -11,6 +11,7 @@ import type { Prospect, RunStep } from "@/lib/types";
 import BatchRunButton from "@/components/BatchRunButton";
 import RunAutoRefresh from "@/components/RunAutoRefresh";
 import RunStarter from "@/components/RunStarter";
+import SafeLink from "@/components/SafeLink";
 import StartRunButton from "@/components/StartRunButton";
 
 export const dynamic = "force-dynamic";
@@ -103,10 +104,8 @@ function StepTrace({ steps }: { steps: RunStep[] }) {
             <ul className="mt-3 flex flex-wrap gap-1.5">
               {step.evidence.map((url) => (
                 <li key={url} className="max-w-full">
-                  <a
+                  <SafeLink
                     href={url}
-                    target="_blank"
-                    rel="noreferrer"
                     title={url}
                     className="badge max-w-full bg-brand-light text-brand-dark hover:bg-brand hover:text-white"
                   >
@@ -114,7 +113,7 @@ function StepTrace({ steps }: { steps: RunStep[] }) {
                       {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                     </span>
                     <span aria-hidden="true">↗</span>
-                  </a>
+                  </SafeLink>
                 </li>
               ))}
             </ul>

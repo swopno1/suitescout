@@ -8,13 +8,17 @@
 // The LLM only writes prose reasons and drafts — it never decides a
 // fact, so a run is reproducible without an API key.
 
+import { lookup } from "node:dns/promises";
 import type { Prospect, ResearchData } from "./types";
 import { isGeneratedLabel } from "./prospect-label";
+import { ipv4Blocked, ipv6Blocked } from "./safe-url";
 
 const UA =
   "SuiteScout/0.1 (research bot; https://github.com/swopno1/suitescout)";
 const FETCH_TIMEOUT_MS = 20_000;
 const MAX_TEXT_CHARS = 40_000;
+const MAX_BODY_BYTES = 2_000_000; // 2 MB — anything bigger is not a resort page
+const MAX_REDIRECTS = 5;
 const FETCH_RETRIES = 1; // one retry on timeout/abort only — slow shared hosts
 
 interface FetchResult {
@@ -24,7 +28,69 @@ interface FetchResult {
   status: number | null;
   html: string | null;
   error: string | null;
+  /** Refused by the SSRF guard (never fetched) — distinct from dead. */
+  blocked: boolean;
 }
+
+type Gate = { url: string } | { blocked: string };
+
+/** SSRF guard: only public http(s) targets, DNS-resolved with every
+ *  answer checked against private/loopback/link-local ranges. Fail
+ *  closed: unresolvable hosts are refused, not fetched. Known limit:
+ *  DNS-rebinding TOCTOU (a hostile name flipping between this check
+ *  and fetch) needs connection pinning — post-judging work. */
+async function assertPublicTarget(raw: string): Promise<Gate> {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return { blocked: "not a URL" };
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    return { blocked: `scheme ${u.protocol} refused` };
+  }
+  if (u.username || u.password) return { blocked: "userinfo refused" };
+  if (!u.hostname) return { blocked: "empty host" };
+  let addrs;
+  try {
+    // getaddrinfo also normalizes exotic literal forms (decimal,
+    // hex, octal IPv4), so 2130706433 and 0x7f.0.0.1 are caught.
+    addrs = await lookup(u.hostname, { all: true });
+  } catch {
+    return { blocked: "unresolvable host" };
+  }
+  for (const a of addrs) {
+    const blocked =
+      a.family === 4 ? ipv4Blocked(a.address) : ipv6Blocked(a.address);
+    if (blocked) {
+      return { blocked: `resolves to non-public IP ${a.address}` };
+    }
+  }
+  return { url: u.toString() };
+}
+
+/** Read a body with a byte budget — a runaway page cannot eat memory. */
+async function readCapped(
+  res: Response,
+): Promise<{ text: string } | { tooLarge: true }> {
+  const reader = res.body?.getReader();
+  if (!reader) return { text: "" };
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      return { tooLarge: true };
+    }
+    chunks.push(value);
+  }
+  return { text: new TextDecoder().decode(Buffer.concat(chunks)) };
+}
+
+const REDIRECT = new Set([301, 302, 303, 307, 308]);
 
 async function fetchPage(url: string): Promise<FetchResult> {
   let last: FetchResult | null = null;
@@ -32,19 +98,76 @@ async function fetchPage(url: string): Promise<FetchResult> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
-        redirect: "follow",
-        signal: controller.signal,
-      });
-      const html = await res.text();
+      let current = url;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+        const gate = await assertPublicTarget(current);
+        if ("blocked" in gate) {
+          return {
+            url,
+            finalUrl: null,
+            ok: false,
+            status: null,
+            html: null,
+            error: `blocked: ${gate.blocked}`,
+            blocked: true,
+          };
+        }
+        const res = await fetch(gate.url, {
+          headers: {
+            "User-Agent": UA,
+            Accept: "text/html,application/xhtml+xml",
+          },
+          // Manual hops so every redirect target passes the guard.
+          redirect: "manual",
+          signal: controller.signal,
+        });
+        if (REDIRECT.has(res.status)) {
+          const loc = res.headers.get("location");
+          await res.body?.cancel().catch(() => undefined);
+          if (!loc) {
+            return {
+              url,
+              finalUrl: gate.url,
+              ok: false,
+              status: res.status,
+              html: null,
+              error: `redirect without location (HTTP ${res.status})`,
+              blocked: false,
+            };
+          }
+          current = new URL(loc, gate.url).toString();
+          continue;
+        }
+        const body = await readCapped(res);
+        if ("tooLarge" in body) {
+          return {
+            url,
+            finalUrl: gate.url,
+            ok: false,
+            status: res.status,
+            html: null,
+            error: "response too large (>2 MB)",
+            blocked: false,
+          };
+        }
+        return {
+          url,
+          finalUrl: gate.url,
+          ok: res.ok,
+          status: res.status,
+          html: body.text,
+          error: null,
+          blocked: false,
+        };
+      }
       return {
         url,
-        finalUrl: res.url,
-        ok: res.ok,
-        status: res.status,
-        html,
-        error: null,
+        finalUrl: null,
+        ok: false,
+        status: null,
+        html: null,
+        error: `too many redirects (>${MAX_REDIRECTS})`,
+        blocked: false,
       };
     } catch (err) {
       last = {
@@ -54,6 +177,7 @@ async function fetchPage(url: string): Promise<FetchResult> {
         status: null,
         html: null,
         error: err instanceof Error ? err.message : "fetch failed",
+        blocked: false,
       };
       // Retry only a timeout/abort — a slow host, not a dead one.
       const isAbort =
@@ -208,10 +332,21 @@ export async function extractResearch(
   for (const url of urls) {
     const r = await fetchPage(url);
     if (!r.ok || !r.html) {
+      if (r.blocked) {
+        // Refused by the SSRF guard — never fetched, so the site is
+        // unknown, not dead. Recorded, never silent.
+        fetchLog.push(`⊘ ${url} — refused (${r.error})`);
+        if (url === prospect.website) {
+          websiteStatus = "unknown";
+          websiteFetched = true;
+          sources.push(url);
+        }
+        continue;
+      }
       fetchLog.push(
         `✗ ${url} — ${r.status ? `HTTP ${r.status}` : r.error ?? "unreachable"}`,
       );
-      // A failed website fetch (DNS / refused / timeout) means dead.
+      // A failed website fetch (refused / timeout) means dead.
       if (url === prospect.website) {
         websiteStatus = "dead";
         websiteFetched = true;

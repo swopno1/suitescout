@@ -19,7 +19,10 @@ export default function BatchRunButton({ newCount }: { newCount: number }) {
       if (!res.ok) throw new Error(data.error || "Failed to start batch run");
       setResult(
         `Started ${data.created} run${data.created === 1 ? "" : "s"}` +
-          (data.skipped > 0 ? ` · ${data.skipped} skipped (already running)` : ""),
+          (data.skipped > 0 ? ` · ${data.skipped} skipped (already running)` : "") +
+          (data.capped
+            ? ` · first 25 of ${data.total_new} (press again for the rest)`
+            : ""),
       );
       router.refresh();
     } catch (err) {

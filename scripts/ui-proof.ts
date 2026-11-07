@@ -9,6 +9,7 @@ import { businessDaysOut } from "../lib/business-days.ts";
 import { matchesProspect, normalize } from "../lib/board-search.ts";
 import { evaluateLead, type LeadSnapshot } from "../lib/evaluate.ts";
 import { formatWhen, relativeAge } from "../lib/format.ts";
+import { ipv4Blocked, ipv6Blocked, safeHttpUrl } from "../lib/safe-url.ts";
 import {
   displayName,
   domainOf,
@@ -191,6 +192,33 @@ check("evaluate: reply books the demo, closed rests", () => {
   assert.equal(replied.suggested_action, "Book the Suite demo call now.");
   const closed = evaluateLead(snap({ status: "closed" }), NOW);
   assert.equal(closed.verdict, "closed");
+});
+
+// --- SSRF range table ---
+check("ssrf: private/loopback/link-local v4 blocked, public allowed", () => {
+  for (const ip of ["10.0.0.5", "172.16.0.1", "172.31.255.1", "192.168.1.1", "127.0.0.1", "169.254.169.254", "0.0.0.0", "100.64.0.1", "224.0.0.1", "999.1.1.1"]) {
+    assert.equal(ipv4Blocked(ip), true, ip);
+  }
+  for (const ip of ["8.8.8.8", "1.1.1.1", "172.15.0.1", "172.32.0.1"]) {
+    assert.equal(ipv4Blocked(ip), false, ip);
+  }
+});
+check("ssrf: v6 special ranges + v4-mapped blocked, public allowed", () => {
+  for (const ip of ["::1", "::", "fe80::1", "fc00::1", "fd00::1", "ff02::1", "::ffff:10.0.0.1"]) {
+    assert.equal(ipv6Blocked(ip), true, ip);
+  }
+  for (const ip of ["2606:4700:4700::1111", "2001:4860:4860::8888", "::ffff:8.8.8.8"]) {
+    assert.equal(ipv6Blocked(ip), false, ip);
+  }
+});
+
+// --- safe external links ---
+check("links: only plain http(s) become anchors", () => {
+  assert.equal(safeHttpUrl("https://example.com/a"), "https://example.com/a");
+  assert.equal(safeHttpUrl("javascript:/*facebook.com*/alert(1)"), null);
+  assert.equal(safeHttpUrl("ftp://example.com/x"), null);
+  assert.equal(safeHttpUrl("https://user:pass@example.com/"), null);
+  assert.equal(safeHttpUrl("not a url"), null);
 });
 
 // --- seed snapshot (no DB) ---
