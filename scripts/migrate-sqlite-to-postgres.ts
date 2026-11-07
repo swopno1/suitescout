@@ -19,6 +19,12 @@
 // resetting each identity sequence to MAX(id) afterwards so future
 // inserts do not collide. Does NOT seed — the app seeds the 20
 // batch-3 prospects itself on first boot when prospects is empty.
+//
+// NULL timestamps in NOT NULL columns are coalesced to the migration
+// time instead of aborting the copy: the old SQLite schema has no
+// created_at on followups at all, and legacy rows can carry NULLs
+// elsewhere. Each coalesced value is logged. Nullable timestamps
+// (runs.finished_at) keep NULL — it means "not finished".
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
@@ -47,8 +53,28 @@ const COLUMNS: Record<(typeof TABLES)[number], string[]> = {
   ],
   runs: ["id", "prospect_id", "steps", "status", "started_at", "finished_at"],
   drafts: ["id", "prospect_id", "channel", "subject", "body", "status", "created_at"],
-  followups: ["id", "prospect_id", "draft_id", "due_after_days", "status"],
+  followups: [
+    "id",
+    "prospect_id",
+    "draft_id",
+    "due_after_days",
+    "status",
+    "created_at",
+  ],
   settings: ["key", "value"],
+};
+
+// Timestamp columns that are NOT NULL in Postgres. A NULL here — or a
+// column the old SQLite schema never had (followups has no created_at)
+// — aborts the whole transaction, so coalesce it to the migration
+// time and log it. Nullable timestamps (runs.finished_at) are NOT in
+// this map: NULL there means "not finished" and Postgres accepts it.
+const NOT_NULL_TIMESTAMPS: Record<string, Set<string>> = {
+  prospects: new Set(["created_at", "updated_at"]),
+  runs: new Set(["started_at"]),
+  drafts: new Set(["created_at"]),
+  followups: new Set(["created_at"]),
+  settings: new Set(),
 };
 
 function usage(): never {
@@ -98,6 +124,10 @@ async function main(): Promise<void> {
     const client = await pool.connect();
     try {
       const counts: Record<string, number> = {};
+      // One shared timestamp for every coalesced value in this run, and
+      // per-table/column counts of coalesced NULLs for the final log.
+      const nowIso = new Date().toISOString();
+      const coalesced: Record<string, Record<string, number>> = {};
       await client.query("BEGIN");
       try {
         // Target schema first, so a fresh empty DB also gets its tables.
@@ -131,7 +161,13 @@ async function main(): Promise<void> {
             const values = cols.map((c) => {
               if (table === "prospects" && c === "demo")
                 return row[c] === 1 || row[c] === true;
-              return row[c] ?? null;
+              const value = row[c] ?? null;
+              if (value === null && NOT_NULL_TIMESTAMPS[table].has(c)) {
+                coalesced[table] ??= {};
+                coalesced[table][c] = (coalesced[table][c] ?? 0) + 1;
+                return nowIso;
+              }
+              return value;
             });
             const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
             await client.query(
@@ -159,6 +195,13 @@ async function main(): Promise<void> {
       console.log("Migration complete:");
       for (const table of TABLES)
         console.log(`  ${table}: ${counts[table]} rows`);
+      for (const table of TABLES) {
+        for (const [col, n] of Object.entries(coalesced[table] ?? {})) {
+          console.log(
+            `  WARNING: ${table}.${col}: ${n} NULL value(s) coalesced to ${nowIso}`,
+          );
+        }
+      }
       console.log("Old SQLite file left untouched (rollback copy).");
     } finally {
       client.release();
