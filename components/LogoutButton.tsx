@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 
-export default function LogoutButton() {
+export default function LogoutButton({ className }: { className?: string }) {
   const [busy, setBusy] = useState(false);
 
   async function logout() {
@@ -20,7 +20,10 @@ export default function LogoutButton() {
     <button
       onClick={logout}
       disabled={busy}
-      className="rounded-full px-3.5 py-1.5 text-sm font-semibold text-stone-500 transition-colors hover:bg-accent-light hover:text-accent disabled:opacity-50"
+      className={
+        className ??
+        "rounded-full px-3.5 py-1.5 text-sm font-semibold text-stone-500 transition-colors hover:bg-accent-light hover:text-accent disabled:opacity-50"
+      }
     >
       {busy ? "Logging out…" : "Log out"}
     </button>
