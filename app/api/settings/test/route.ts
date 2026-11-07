@@ -24,7 +24,9 @@ export async function POST() {
     await chatCompletion({
       messages: [{ role: "user", content: "Reply with the word: ok" }],
       temperature: 0,
-      maxTokens: 5,
+      // Reasoning models think (~10 tokens) before answering — a
+      // 5-token budget returns length-cutoff with empty content.
+      maxTokens: 60,
     });
     return NextResponse.json({
       ok: true,

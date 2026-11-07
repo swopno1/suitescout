@@ -50,7 +50,13 @@ export interface ChatCompletionOptions {
 }
 
 interface ChatCompletionResponse {
-  choices?: { message?: { content?: string } }[];
+  choices?: {
+    message?: { content?: string; reasoning?: string };
+    finish_reason?: string;
+  }[];
+  usage?: {
+    completion_tokens_details?: { reasoning_tokens?: number };
+  };
 }
 
 /** One chat completion against Vultr Serverless Inference. Throws on
@@ -90,7 +96,17 @@ export async function chatCompletion(
   const data = (await res.json()) as ChatCompletionResponse;
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error("Vultr inference returned an empty reply.");
+    // Reasoning models (e.g. DeepSeek Flash) spend tokens thinking
+    // first — a starved max_tokens budget returns finish_reason
+    // "length" with empty content. Say so instead of "empty reply".
+    const finish = data.choices?.[0]?.finish_reason;
+    const thought =
+      data.usage?.completion_tokens_details?.reasoning_tokens;
+    throw new Error(
+      finish === "length"
+        ? `Vultr inference reply cut off: max_tokens too small${thought ? ` (model spent ${thought} tokens reasoning)` : ""} — raise the budget.`
+        : "Vultr inference returned an empty reply.",
+    );
   }
   return content;
 }
