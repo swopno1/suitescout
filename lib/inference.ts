@@ -29,8 +29,8 @@ export function getDefaultModel(): string {
 
 /** Settings override wins over the env default; env wins over the
  *  hardcoded default. Friday's executor uses this. */
-export function getEffectiveModel(): string {
-  return getSetting("inference_model") || getDefaultModel();
+export async function getEffectiveModel(): Promise<string> {
+  return (await getSetting("inference_model")) || getDefaultModel();
 }
 
 export function isInferenceConfigured(): boolean {
@@ -65,7 +65,7 @@ export async function chatCompletion(
       "VULTR_INFERENCE_API_KEY is not set — add it to .env (see .env.example).",
     );
   }
-  const model = options.model || getEffectiveModel();
+  const model = options.model || (await getEffectiveModel());
   const res = await fetch(`${INFERENCE_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {

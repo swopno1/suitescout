@@ -204,39 +204,40 @@ async function llmDraft(
 /** Execute the five-step loop for a run. Idempotent: a run that is
  *  already done/failed/running is left alone. */
 export async function runAgent(runId: number): Promise<void> {
-  const run = getRun(runId);
+  const run = await getRun(runId);
   if (!run) return;
   if (run.status !== "queued") return;
 
-  const prospect = getProspect(run.prospect_id);
+  const prospect = await getProspect(run.prospect_id);
   if (!prospect) {
-    updateRun(runId, { status: "failed" });
+    await updateRun(runId, { status: "failed" });
     return;
   }
 
   const steps: RunStep[] = run.steps.map((s) => ({ ...s }));
-  const persist = (status?: "running" | "done" | "failed") =>
-    updateRun(runId, { steps, status });
+  const persist = async (status?: "running" | "done" | "failed") => {
+    await updateRun(runId, { steps, status });
+  };
 
   const setStep = (i: number, patch: Partial<RunStep>) => {
     steps[i] = { ...steps[i], ...patch };
   };
 
-  const fail = (i: number, err: unknown) => {
+  const fail = async (i: number, err: unknown) => {
     const msg = err instanceof Error ? err.message : "unknown error";
     setStep(i, {
       status: "failed",
       finished: nowIso(),
       output: `Step failed: ${msg}`,
     });
-    persist("failed");
+    await persist("failed");
   };
 
-  persist("running");
+  await persist("running");
 
   // ---- Step 1: Research ----
   setStep(0, { status: "running", started: nowIso(), note: null });
-  persist();
+  await persist();
   let research: ResearchData;
   let fetchLog: string[];
   try {
@@ -267,15 +268,15 @@ export async function runAgent(runId: number): Promise<void> {
       evidence: research.sources,
       output: `${summary}\n\nFetch log:\n${fetchLog.join("\n")}`,
     });
-    persist();
+    await persist();
   } catch (err) {
-    fail(0, err);
+    await fail(0, err);
     return;
   }
 
   // ---- Step 2: Score ----
   setStep(1, { status: "running", started: nowIso(), note: null });
-  persist();
+  await persist();
   try {
     const scored = scoreResearch(research);
     let reasons = scored.reasons;
@@ -287,14 +288,14 @@ export async function runAgent(runId: number): Promise<void> {
         llmUsed = true;
       }
     }
-    updateProspectResearch(
+    await updateProspectResearch(
       prospect.id,
       research,
       scored.score,
       scored.band,
       reasons,
     );
-    updateProspectStatus(prospect.id, "researched");
+    await updateProspectStatus(prospect.id, "researched");
     setStep(1, {
       status: "done",
       finished: nowIso(),
@@ -309,15 +310,15 @@ export async function runAgent(runId: number): Promise<void> {
           : "(Reasons from the deterministic rubric — no LLM key configured or the call failed.)",
       ].join("\n"),
     });
-    persist();
+    await persist();
   } catch (err) {
-    fail(1, err);
+    await fail(1, err);
     return;
   }
 
   // ---- Step 3: Draft ----
   setStep(2, { status: "running", started: nowIso(), note: null });
-  persist();
+  await persist();
   try {
     const observation = pickObservation(research);
     const llmOn = isInferenceConfigured();
@@ -332,19 +333,19 @@ export async function runAgent(runId: number): Promise<void> {
       subject: null,
       body: templateWhatsApp(prospect, observation),
     };
-    const emailDraft = createDraft({
+    const emailDraft = await createDraft({
       prospectId: prospect.id,
       channel: "email",
       subject: emailFinal.subject,
       body: emailFinal.body,
     });
-    const waDraft = createDraft({
+    const waDraft = await createDraft({
       prospectId: prospect.id,
       channel: "whatsapp",
       subject: null,
       body: waFinal.body,
     });
-    updateProspectStatus(prospect.id, "drafted");
+    await updateProspectStatus(prospect.id, "drafted");
     setStep(2, {
       status: "done",
       finished: nowIso(),
@@ -358,19 +359,19 @@ export async function runAgent(runId: number): Promise<void> {
         `No prices in either draft. A human approves every send.`,
       ].join("\n"),
     });
-    persist();
+    await persist();
   } catch (err) {
-    fail(2, err);
+    await fail(2, err);
     return;
   }
 
   // ---- Step 4: Log ----
   setStep(3, { status: "running", started: nowIso(), note: null });
-  persist();
+  await persist();
   try {
-    const fresh = getProspect(prospect.id);
-    const drafts = listDraftsForProspect(prospect.id);
-    const followups = listFollowupsForProspect(prospect.id);
+    const fresh = await getProspect(prospect.id);
+    const drafts = await listDraftsForProspect(prospect.id);
+    const followups = await listFollowupsForProspect(prospect.id);
     setStep(3, {
       status: "done",
       finished: nowIso(),
@@ -381,28 +382,28 @@ export async function runAgent(runId: number): Promise<void> {
         `Run #${runId} trace complete — research, score, drafts and board state all persisted.`,
       ].join("\n"),
     });
-    persist();
+    await persist();
   } catch (err) {
-    fail(3, err);
+    await fail(3, err);
     return;
   }
 
   // ---- Step 5: Follow up ----
   setStep(4, { status: "running", started: nowIso(), note: null });
-  persist();
+  await persist();
   try {
-    const delayRaw = getSetting("followup_delay_days");
+    const delayRaw = await getSetting("followup_delay_days");
     const delay = delayRaw ? Number(delayRaw) : FOLLOWUP_DEFAULT_DAYS;
     const days = Number.isFinite(delay) && delay > 0 ? Math.floor(delay) : FOLLOWUP_DEFAULT_DAYS;
     const dueDate = businessDaysOut(days);
     const observation = pickObservation(research);
-    const followupDraft = createDraft({
+    const followupDraft = await createDraft({
       prospectId: prospect.id,
       channel: "email",
       subject: `Re: ${prospect.name} — quick follow-up`,
       body: templateFollowup(prospect, observation, dueDate),
     });
-    createFollowup({
+    await createFollowup({
       prospectId: prospect.id,
       draftId: followupDraft.id,
       dueAfterDays: days,
@@ -416,11 +417,11 @@ export async function runAgent(runId: number): Promise<void> {
         `Prospect flagged for human review; nothing sends itself.`,
       ].join("\n"),
     });
-    persist();
+    await persist();
   } catch (err) {
-    fail(4, err);
+    await fail(4, err);
     return;
   }
 
-  persist("done");
+  await persist("done");
 }

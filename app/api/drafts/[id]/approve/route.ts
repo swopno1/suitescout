@@ -13,7 +13,7 @@ export async function POST(
   if (!Number.isFinite(draftId)) {
     return NextResponse.json({ error: "invalid draft id" }, { status: 400 });
   }
-  const existing = getDraft(draftId);
+  const existing = await getDraft(draftId);
   if (!existing) {
     return NextResponse.json({ error: "draft not found" }, { status: 404 });
   }
@@ -23,6 +23,6 @@ export async function POST(
       { status: 409 },
     );
   }
-  const draft = approveDraft(draftId);
+  const draft = await approveDraft(draftId);
   return NextResponse.json({ draft });
 }

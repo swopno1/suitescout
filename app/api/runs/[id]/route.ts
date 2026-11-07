@@ -12,7 +12,7 @@ export async function GET(
   if (!Number.isFinite(runId)) {
     return NextResponse.json({ error: "invalid run id" }, { status: 400 });
   }
-  const run = getRun(runId);
+  const run = await getRun(runId);
   if (!run) {
     return NextResponse.json({ error: "run not found" }, { status: 404 });
   }

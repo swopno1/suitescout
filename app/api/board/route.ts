@@ -5,7 +5,7 @@ import { PROSPECT_STATUSES, type Prospect } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const prospects = listProspects();
+  const prospects = await listProspects();
   const columns: Record<string, Prospect[]> = {};
   const counts: Record<string, number> = {};
   for (const status of PROSPECT_STATUSES) {

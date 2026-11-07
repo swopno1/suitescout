@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // better-sqlite3 is a native Node module; keep it out of the client bundle.
-  serverExternalPackages: ["better-sqlite3"],
+  // pg (node-postgres) stays out of the client bundle — server only.
+  serverExternalPackages: ["pg"],
 };
 
 export default nextConfig;

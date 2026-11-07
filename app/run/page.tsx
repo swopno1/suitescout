@@ -149,8 +149,9 @@ export default async function RunPage({
 }) {
   const params = await searchParams;
   const runId = params.id ? Number(params.id) : NaN;
-  const run = Number.isFinite(runId) ? getRun(runId) : getLatestRun();
-  const prospects = listProspects();
+  const run = await (Number.isFinite(runId) ? getRun(runId) : getLatestRun());
+  const runProspect = run ? await getProspect(run.prospect_id) : null;
+  const prospects = await listProspects();
   const live =
     !!run && (run.status === "queued" || run.status === "running");
 
@@ -182,7 +183,7 @@ export default async function RunPage({
             <h2 className="text-lg font-bold">
               Run <span className="tabular-nums">#{run.id}</span>
               {(() => {
-                const p = getProspect(run.prospect_id);
+                const p = runProspect;
                 return p ? (
                   <>
                     {" for "}

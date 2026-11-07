@@ -81,7 +81,7 @@ export default async function BoardPage({
   const params = await searchParams;
   const band = params.band || undefined;
   const locationFilter = (params.location || "").toLowerCase();
-  const all = listProspects({ band });
+  const all = await listProspects({ band });
   const prospects = locationFilter
     ? all.filter((p) =>
         (p.location || "").toLowerCase().includes(locationFilter),
@@ -98,8 +98,8 @@ export default async function BoardPage({
   const statusCounts = Object.fromEntries(
     PROSPECT_STATUSES.map((s) => [s, all.filter((p) => p.status === s).length]),
   ) as Record<(typeof PROSPECT_STATUSES)[number], number>;
-  const draftsReady = countDrafts();
-  const followupsScheduled = countFollowups();
+  const draftsReady = await countDrafts();
+  const followupsScheduled = await countFollowups();
 
   return (
     <div>

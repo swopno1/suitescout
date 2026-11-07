@@ -9,11 +9,11 @@ import SettingsForm from "@/components/SettingsForm";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const settings = getAllSettings();
+  const settings = await getAllSettings();
   const currentModel = settings.inference_model || getDefaultModel();
   const currentDelay = Number(settings.followup_delay_days || "3");
   const keyConfigured = isInferenceConfigured();
-  const prospectCount = listProspects().length;
+  const prospectCount = (await listProspects()).length;
 
   return (
     <div>

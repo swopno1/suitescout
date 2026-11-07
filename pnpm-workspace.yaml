@@ -1,2 +1,4 @@
 allowBuilds:
   better-sqlite3: true
+  # tsx runs on esbuild; its postinstall builds the binary.
+  esbuild: true

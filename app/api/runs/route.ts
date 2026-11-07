@@ -18,10 +18,10 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const prospect = getProspect(prospectId);
+  const prospect = await getProspect(prospectId);
   if (!prospect) {
     return NextResponse.json({ error: "prospect not found" }, { status: 404 });
   }
-  const run = startRun(prospectId);
+  const run = await startRun(prospectId);
   return NextResponse.json({ run }, { status: 201 });
 }

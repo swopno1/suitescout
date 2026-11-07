@@ -13,15 +13,15 @@ export const dynamic = "force-dynamic";
  * untouched.
  */
 export async function POST() {
-  const fresh = listProspects({ status: "new" });
+  const fresh = await listProspects({ status: "new" });
   const runIds: number[] = [];
   let skipped = 0;
   for (const prospect of fresh) {
-    if (hasActiveRun(prospect.id)) {
+    if (await hasActiveRun(prospect.id)) {
       skipped += 1;
       continue;
     }
-    const run = startRun(prospect.id);
+    const run = await startRun(prospect.id);
     runIds.push(run.id);
   }
   return NextResponse.json(

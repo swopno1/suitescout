@@ -46,9 +46,10 @@ the clearest case in the seed data.
 Browser
   │  (Next.js App Router — one service)
   ▼
-SuiteScout on a Vultr Cloud Compute VM (Docker, one container)
-  ├─ Next.js UI + API routes
-  ├─ SQLite (better-sqlite3) — prospects, runs, drafts, follow-ups
+SuiteScout on a Vultr Cloud Compute VM (Docker)
+  ├─ Next.js UI + API routes (one container)
+  ├─ PostgreSQL 16 — shared platform-postgres on vivescript-net
+  │     (prospects, runs, drafts, follow-ups, settings)
   └─ Vultr Serverless Inference (OpenAI-compatible)
         https://api.vultrinference.com/v1
   │  (live web fetch — research step)
@@ -60,7 +61,8 @@ Prospect resort's public website / Facebook / listings
 
 | Service | Role |
 |---|---|
-| **Vultr Cloud Compute** (Ubuntu 24.04, 2 vCPU / 2 GB) | The control layer and the host: one Docker container runs the whole app — UI, API, SQLite store. |
+| **Vultr Cloud Compute** (Ubuntu 24.04, 2 vCPU / 4 GB) | The control layer and the host: Docker runs the app container, the shared Postgres, and Caddy (TLS). |
+| **PostgreSQL 16** (self-hosted `platform-postgres` on the VM) | The shared database for SuiteScout (and the demo apps) — one `suitescout` database on the internal `vivescript-net` network. Replaces the old per-app SQLite file. |
 | **Vultr Serverless Inference** | Every LLM call. Primary: `deepseek-v4.1-flash-1017` ($0.15 in / $0.60 out per 1M tokens, 1M context) for research + drafting. Scoring: `qwen3.8-flash-next` ($0.10 / $0.20, 256K context). OpenAI-compatible endpoint, so the client is a plain `fetch` against `/v1/chat/completions`. |
 | **$200 hackathon credits** | Fund the VM and inference for the build and judging window. |
 
@@ -86,7 +88,7 @@ Screenshots: _to be added once the first live run lands (Friday)._
 ## Run locally
 
 ```bash
-cp .env.example .env   # add VULTR_INFERENCE_API_KEY
+cp .env.example .env   # add VULTR_INFERENCE_API_KEY + DATABASE_URL (Postgres, required)
 pnpm install
 pnpm dev            # http://localhost:3000
 ```
@@ -99,10 +101,79 @@ Sundori Eco Resort, Balishira Resort — is flagged DEMO on the board.
 
 ```bash
 # On the VM (Ubuntu 24.04): install Docker + Compose, then:
-cp .env.example .env   # add VULTR_INFERENCE_API_KEY
+cp .env.example .env   # add VULTR_INFERENCE_API_KEY, APP_PASSWORD, DATABASE_URL
 docker compose up -d --build
-# App on http://<vm-ip>:3000 — data persists in ./data (SQLite volume).
+# App on http://<vm-ip>:3000 (or https://suitescout.vivereply.com via Caddy).
+# Data lives in the shared platform-postgres — no local volume anymore.
+# First boot creates the schema and seeds the 20 batch-3 prospects
+# when the `suitescout` database is empty (see "Database" below).
 ```
+
+## Database (PostgreSQL)
+
+The app stores everything in the **shared platform-postgres**
+(Postgres 16, container `platform-postgres`, network `vivescript-net`)
+on the same VM — database `suitescout`. There is no SQLite file
+anymore; the only SQLite left in the repo is the one-off migration
+script below.
+
+### Provisioning (one time, on the VM)
+
+The `suitescout` database already exists. Create its user once:
+
+```bash
+cd ~/platform
+docker exec platform-postgres psql -U postgres -c \
+  "CREATE USER suitescout WITH PASSWORD '<strong-password>';"
+docker exec platform-postgres psql -U postgres -c \
+  "GRANT ALL PRIVILEGES ON DATABASE suitescout TO suitescout;"
+docker exec platform-postgres psql -U postgres -c \
+  "GRANT ALL ON SCHEMA public TO suitescout;"
+```
+
+Then set `DATABASE_URL` in `~/suitescout/.env` (same password):
+
+```
+DATABASE_URL=postgresql://suitescout:<password>@platform-postgres:5432/suitescout
+```
+
+### Migrating the old SQLite data
+
+The old app kept its data in `./data/suitescout.db` on the VM. Copy
+it into Postgres with the migration script (run on the VM, where both
+the `.db` file and Postgres are reachable). Build the new image
+first — the script ships in it:
+
+```bash
+cd ~/suitescout
+docker compose build
+docker compose run --rm -v "$PWD/data:/data" suitescout \
+  pnpm db:migrate-sqlite --sqlite /data/suitescout.db
+docker compose up -d
+```
+
+The script copies all five tables (prospects, runs, drafts,
+follow-ups, settings) in one transaction, preserving ids, and resets
+each identity sequence to `MAX(id)`. It aborts if the Postgres tables
+are not empty — pass `--force` to TRUNCATE and copy anyway. It does
+not seed; the app seeds on first boot when `prospects` is empty.
+
+### Fresh deploy / re-seed
+
+On first boot the app creates the schema (`CREATE TABLE IF NOT
+EXISTS`) and, when the `prospects` table is empty, seeds the same 20
+batch-3 prospects as before (see `lib/seed.ts`). So a fresh empty
+database re-seeds itself — no manual step. A database that already
+has prospects is never re-seeded.
+
+### Rollback
+
+- The old SQLite file `./data/suitescout.db` stays on the VM as the
+  rollback copy — do not delete it.
+- To roll back the app: check out the previous commit in
+  `~/suitescout` (`git checkout <previous-commit>`), then
+  `docker compose up -d --build` — the old build reads the SQLite
+  file again. Postgres data is untouched by the rollback.
 
 ## Login
 
@@ -126,7 +197,7 @@ the password from the submission). Never commit `.env`.
 |---|---|
 | `VULTR_INFERENCE_API_KEY` | Vultr Serverless Inference API key (required for LLM calls). |
 | `VULTR_INFERENCE_MODEL` | Default model id (default `deepseek-v4.1-flash-1017`). |
-| `DATABASE_URL` | SQLite path (default `./data/suitescout.db`). |
+| `DATABASE_URL` | PostgreSQL connection string — REQUIRED, the app fails fast at startup without it. `postgresql://suitescout:<password>@platform-postgres:5432/suitescout`. |
 | `APP_URL` | Public URL of the deployed app. |
 | `APP_PASSWORD` | Login password (Basic Auth, username `demo`). Unset/empty = the app answers 401 to everything. |
 

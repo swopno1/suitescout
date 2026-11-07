@@ -1,9 +1,13 @@
-# SuiteScout — single container. Node 20 + native build tools for better-sqlite3.
+# SuiteScout — single container. Node 20.
+# The database is the shared platform-postgres (Postgres 16) on the
+# vivescript-net network — DATABASE_URL comes from the environment
+# (docker-compose.yml), never baked into the image.
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Build tools needed to compile better-sqlite3 (native module).
+# Build tools still needed: better-sqlite3 (native module) is a
+# devDependency — only the SQLite→Postgres migration script uses it.
 RUN apk add --no-cache python3 make g++
 
 # pnpm — exact pin matching packageManager in package.json.
@@ -16,10 +20,8 @@ COPY . .
 RUN pnpm run build
 
 ENV NODE_ENV=production
-ENV DATABASE_URL=/app/data/suitescout.db
 ENV PORT=3000
 
-VOLUME ["/app/data"]
 EXPOSE 3000
 
 CMD ["pnpm", "start"]

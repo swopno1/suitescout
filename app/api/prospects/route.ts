@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status") || undefined;
   const band = req.nextUrl.searchParams.get("band") || undefined;
-  return NextResponse.json({ prospects: listProspects({ status, band }) });
+  return NextResponse.json({ prospects: await listProspects({ status, band }) });
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     website?: string | null;
     location?: string | null;
   };
-  const prospect = createProspect({
+  const prospect = await createProspect({
     name: input.name,
     website: input.website ?? null,
     location: input.location ?? null,

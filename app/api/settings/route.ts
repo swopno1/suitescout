@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const KNOWN_MODEL_IDS: string[] = KNOWN_MODELS.map((m) => m.id);
 
 export async function GET() {
-  const settings = getAllSettings();
+  const settings = await getAllSettings();
   return NextResponse.json({
     inference_model: settings.inference_model || getDefaultModel(),
     followup_delay_days: Number(settings.followup_delay_days || "3"),
@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  setSetting("inference_model", inference_model);
-  setSetting("followup_delay_days", String(delay));
+  await setSetting("inference_model", inference_model);
+  await setSetting("followup_delay_days", String(delay));
   return NextResponse.json({
     inference_model,
     followup_delay_days: delay,

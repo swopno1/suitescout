@@ -146,12 +146,12 @@ export default async function ProspectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const prospect = getProspect(Number(id));
+  const prospect = await getProspect(Number(id));
   if (!prospect) notFound();
 
-  const drafts = listDraftsForProspect(prospect.id);
-  const runs = listRunsForProspect(prospect.id);
-  const followups = listFollowupsForProspect(prospect.id);
+  const drafts = await listDraftsForProspect(prospect.id);
+  const runs = await listRunsForProspect(prospect.id);
+  const followups = await listFollowupsForProspect(prospect.id);
 
   return (
     <div>

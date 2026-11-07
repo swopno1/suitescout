@@ -8,7 +8,7 @@ import { createRun } from "./db";
 import { runAgent } from "./agent";
 import { AGENT_STEPS, type Run, type RunStep } from "./types";
 
-export function startRun(prospectId: number): Run {
+export async function startRun(prospectId: number): Promise<Run> {
   const steps: RunStep[] = AGENT_STEPS.map((name) => ({
     name,
     status: "pending",
@@ -18,7 +18,7 @@ export function startRun(prospectId: number): Run {
     output: null,
     note: null,
   }));
-  const run = createRun(prospectId, steps);
+  const run = await createRun(prospectId, steps);
   after(async () => {
     try {
       await runAgent(run.id);

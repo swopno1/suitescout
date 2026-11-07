@@ -1,3 +1,8 @@
+# SuiteScout on the Vultr VM. The database is the shared
+# platform-postgres (Postgres 16) on the vivescript-net network —
+# DATABASE_URL points at platform-postgres:5432 (see .env.example).
+# No SQLite volume anymore; the old ./data/suitescout.db stays on the
+# VM host as the rollback copy — do not delete it.
 services:
   suitescout:
     build: .
@@ -8,7 +13,13 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=/app/data/suitescout.db
+      - DATABASE_URL=${DATABASE_URL}
       - TZ=Asia/Dhaka
-    volumes:
-      - ./data:/app/data
+    networks:
+      - vivescript-net
+
+networks:
+  # Owned by the platform stack (~/platform) — this service only joins it.
+  vivescript-net:
+    name: vivescript-net
+    external: true

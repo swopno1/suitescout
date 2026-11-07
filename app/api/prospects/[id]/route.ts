@@ -24,7 +24,7 @@ export async function PATCH(
       { status: 400 },
     );
   }
-  const prospect = updateProspectStatus(prospectId, status as ProspectStatus);
+  const prospect = await updateProspectStatus(prospectId, status as ProspectStatus);
   if (!prospect) {
     return NextResponse.json({ error: "prospect not found" }, { status: 404 });
   }
