@@ -83,7 +83,7 @@ of reasoning. Nothing in the loop runs anywhere else.
 - **Human gate.** Drafts sit at `draft` until a human approves them
   (`POST /api/drafts/:id/approve`). Nothing sends on its own.
 
-Screenshots: _to be added once the first live run lands (Friday)._
+Screenshots: _from the live board — to be added._
 
 ## Run locally
 
@@ -109,6 +109,12 @@ docker compose up -d --build
 # when the `suitescout` database is empty (see "Database" below).
 ```
 
+On a first deploy after the SQLite → Postgres move, run the
+migration (`pnpm db:migrate-sqlite`) BEFORE the app's first start —
+first boot seeds the 20 prospects, and the migration then aborts as
+non-empty (recover with `--force`). See "Migrating the old SQLite
+data" under "Database" below.
+
 ## Database (PostgreSQL)
 
 The app stores everything in the **shared platform-postgres**
@@ -127,7 +133,7 @@ docker exec platform-postgres psql -U postgres -c \
   "CREATE USER suitescout WITH PASSWORD '<strong-password>';"
 docker exec platform-postgres psql -U postgres -c \
   "GRANT ALL PRIVILEGES ON DATABASE suitescout TO suitescout;"
-docker exec platform-postgres psql -U postgres -c \
+docker exec platform-postgres psql -U postgres -d suitescout -c \
   "GRANT ALL ON SCHEMA public TO suitescout;"
 ```
 
@@ -198,7 +204,6 @@ the password from the submission). Never commit `.env`.
 | `VULTR_INFERENCE_API_KEY` | Vultr Serverless Inference API key (required for LLM calls). |
 | `VULTR_INFERENCE_MODEL` | Default model id (default `deepseek-v4.1-flash-1017`). |
 | `DATABASE_URL` | PostgreSQL connection string — REQUIRED, the app fails fast at startup without it. `postgresql://suitescout:<password>@platform-postgres:5432/suitescout`. |
-| `APP_URL` | Public URL of the deployed app. |
 | `APP_PASSWORD` | Login password (Basic Auth, username `demo`). Unset/empty = the app answers 401 to everything. |
 
 ## API
@@ -208,7 +213,7 @@ the password from the submission). Never commit `.env`.
 | `GET /api/prospects` (+ `?status=` `?band=`) | List prospects. |
 | `POST /api/prospects` | Add a prospect (`name`, `website`, `location`). |
 | `GET /api/board` | Kanban columns + counts. |
-| `POST /api/runs` | Queue a run for a prospect (scaffold: steps pending). |
+| `POST /api/runs` | Queue a run for a prospect — runs the 5-step loop (research → score → draft → log → follow-up). |
 | `GET /api/runs/:id` | Run trace (steps + evidence + status). |
 | `PATCH /api/prospects/:id` | Update prospect status. |
 | `POST /api/drafts/:id/approve` | Human approval gate for a draft. |
