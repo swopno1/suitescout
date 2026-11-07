@@ -5,7 +5,8 @@ export type ProspectStatus =
   | "researched"
   | "drafted"
   | "contacted"
-  | "replied";
+  | "replied"
+  | "closed";
 
 export type ScoreBand = "hot" | "warm" | "cold";
 
@@ -83,6 +84,8 @@ export interface Draft {
   body: string;
   status: DraftStatus;
   created_at: string;
+  approved_at: string | null;
+  sent_at: string | null;
 }
 
 export interface Followup {
@@ -91,6 +94,7 @@ export interface Followup {
   draft_id: number | null;
   due_after_days: number;
   status: string;
+  created_at: string;
 }
 
 export const PROSPECT_STATUSES: ProspectStatus[] = [
@@ -99,6 +103,7 @@ export const PROSPECT_STATUSES: ProspectStatus[] = [
   "drafted",
   "contacted",
   "replied",
+  "closed",
 ];
 
 export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
@@ -107,7 +112,18 @@ export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
   drafted: "Drafted",
   contacted: "Contacted",
   replied: "Replied",
+  closed: "Closed",
 };
+
+/** One pipeline move — the lead timeline. from_status is null for the
+ *  initial "added as new" event. */
+export interface ProspectStatusEvent {
+  id: number;
+  prospect_id: number;
+  from_status: ProspectStatus | null;
+  to_status: ProspectStatus;
+  created_at: string;
+}
 
 /** The five agent-loop steps — BUILD-SPEC.md §7. */
 export const AGENT_STEPS = [

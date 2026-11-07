@@ -9,6 +9,7 @@
 // fact, so a run is reproducible without an API key.
 
 import type { Prospect, ResearchData } from "./types";
+import { isGeneratedLabel } from "./prospect-label";
 
 const UA =
   "SuiteScout/0.1 (research bot; https://github.com/swopno1/suitescout)";
@@ -247,10 +248,15 @@ export async function extractResearch(
   // that names twenty hotels would otherwise donate another property's
   // room count (Giriraj once read 22 rooms off a Bandarban list page)
   // or its marketing copy's room words (Sundori once read 7 types).
-  const nameToken = prospect.name
-    .replace(/^the\s+/i, "")
-    .split(/[\s-]+/)[0]
-    .toLowerCase();
+  // Generated labels ("Website: …") carry no name to scope by — an
+  // empty token would match everywhere, so skip directory scoping and
+  // read rooms from the own site only.
+  const nameToken = isGeneratedLabel(prospect.name)
+    ? ""
+    : prospect.name
+        .replace(/^the\s+/i, "")
+        .split(/[\s-]+/)[0]
+        .toLowerCase();
   const roomTextParts: string[] = [];
   const ownRoomTextParts: string[] = [];
   for (const t of texts) {
@@ -263,6 +269,7 @@ export async function extractResearch(
       ownRoomTextParts.push(t.text);
       continue;
     }
+    if (!nameToken) continue;
     const lowerText = t.text.toLowerCase();
     let from = 0;
     while (true) {

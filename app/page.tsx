@@ -4,68 +4,67 @@ import {
   PROSPECT_STATUSES,
   PROSPECT_STATUS_LABELS,
   type Prospect,
-  type ScoreBand,
 } from "@/lib/types";
+import { matchesProspect } from "@/lib/board-search";
+import { domainOf } from "@/lib/prospect-label";
 import AddProspectForm from "@/components/AddProspectForm";
 import BatchRunButton from "@/components/BatchRunButton";
 
 export const dynamic = "force-dynamic";
 
-const BAND_STYLES: Record<ScoreBand, string> = {
+const BAND_STYLES: Record<string, string> = {
   hot: "bg-accent text-white",
   warm: "bg-amber-600 text-white",
   cold: "bg-slate-500 text-white",
 };
 
+const COLUMN_DOT: Record<(typeof PROSPECT_STATUSES)[number], string> = {
+  new: "bg-stone-400",
+  researched: "bg-brand",
+  drafted: "bg-amber-600",
+  contacted: "bg-accent",
+  replied: "bg-emerald-600",
+  closed: "bg-stone-700",
+};
+
 function ScoreBadge({ prospect }: { prospect: Prospect }) {
   if (prospect.fit_score === null || !prospect.score_band) {
     return (
-      <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold text-stone-600">
-        Not scored
-      </span>
+      <span className="badge bg-stone-200 text-stone-600">Not scored</span>
     );
   }
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BAND_STYLES[prospect.score_band]}`}
-    >
-      {prospect.fit_score} · {prospect.score_band}
+    <span className={`badge ${BAND_STYLES[prospect.score_band]}`}>
+      <span className="tabular-nums">{prospect.fit_score}</span>
+      <span className="capitalize">{prospect.score_band}</span>
     </span>
   );
 }
 
 function ProspectCard({ prospect }: { prospect: Prospect }) {
+  const sub =
+    prospect.location?.trim() ||
+    (prospect.website?.trim() ? domainOf(prospect.website) : "") ||
+    "No details yet";
   return (
-    <article className="rounded-lg border border-stone-300 bg-white p-3">
+    <article className="card card-hover !p-3">
       <div className="flex items-start justify-between gap-2">
         <Link
           href={`/prospects/${prospect.id}`}
-          className="font-semibold text-brand-dark hover:underline"
+          className="font-semibold leading-snug text-brand-dark hover:underline"
         >
           {prospect.name}
         </Link>
         {prospect.demo && (
-          <span className="shrink-0 rounded bg-accent-light px-1.5 py-0.5 text-[10px] font-bold text-accent">
-            DEMO
+          <span className="badge shrink-0 bg-accent-light text-[10px] font-bold uppercase tracking-wide text-accent">
+            Demo
           </span>
         )}
       </div>
-      {prospect.location && (
-        <p className="mt-0.5 text-xs text-stone-500">{prospect.location}</p>
-      )}
-      {prospect.website && (
-        <a
-          href={prospect.website}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 block truncate text-xs text-brand hover:underline"
-        >
-          {prospect.website}
-        </a>
-      )}
-      <div className="mt-2 flex items-center justify-between">
+      <p className="mt-0.5 truncate text-xs text-stone-500">{sub}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
         <ScoreBadge prospect={prospect} />
-        <span className="text-[11px] uppercase tracking-wide text-stone-400">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
           {prospect.source}
         </span>
       </div>
@@ -76,46 +75,116 @@ function ProspectCard({ prospect }: { prospect: Prospect }) {
 export default async function BoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ band?: string; location?: string }>;
+  searchParams: Promise<{ band?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const band = params.band || undefined;
-  const locationFilter = (params.location || "").toLowerCase();
-  const all = await listProspects({ band });
-  const prospects = locationFilter
-    ? all.filter((p) =>
-        (p.location || "").toLowerCase().includes(locationFilter),
-      )
-    : all;
+  const query = (params.q || "").trim();
+  // Stats always count the full board; filters apply to the columns only.
+  const everything = await listProspects();
+  const prospects = everything.filter(
+    (p) =>
+      (!band || p.score_band === band) &&
+      matchesProspect(
+        {
+          name: p.name,
+          website: p.website,
+          location: p.location,
+          ota_listings: p.research?.ota_listings ?? [],
+          demand_signals: p.research?.demand_signals ?? [],
+          score_band: p.score_band,
+        },
+        query,
+      ),
+  );
+  const [draftsReady, followupsSet] = await Promise.all([
+    countDrafts(),
+    countFollowups(),
+  ]);
+  const newCount = everything.filter((p) => p.status === "new").length;
 
-  // Pipeline stats — always computed over the full board, never the
-  // filtered view, so the numbers stay comparable run to run.
-  const newCount = all.filter((p) => p.status === "new").length;
-  const hotCount = all.filter((p) => p.score_band === "hot").length;
-  const warmCount = all.filter((p) => p.score_band === "warm").length;
-  const coldCount = all.filter((p) => p.score_band === "cold").length;
-  const unscoredCount = all.filter((p) => p.fit_score === null).length;
-  const statusCounts = Object.fromEntries(
-    PROSPECT_STATUSES.map((s) => [s, all.filter((p) => p.status === s).length]),
-  ) as Record<(typeof PROSPECT_STATUSES)[number], number>;
-  const draftsReady = await countDrafts();
-  const followupsScheduled = await countFollowups();
+  const bandCount = (b: string) =>
+    everything.filter((p) => p.score_band === b).length;
+  const statusCount = (s: string) =>
+    everything.filter((p) => p.status === s).length;
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Prospect board</h1>
-          <p className="text-sm text-stone-600">
-            {prospects.length} prospects · {all.length} total · New →
-            Researched → Drafted → Contacted → Replied
+          <h1 className="page-title">Prospect board</h1>
+          <p className="page-sub">
+            Pipeline from first sighting to reply. Every score cites its
+            evidence.
           </p>
         </div>
-        <form className="flex gap-2" method="get">
+        <BatchRunButton newCount={newCount} />
+      </div>
+
+      <dl className="card mb-4 flex flex-wrap gap-x-8 gap-y-2 !py-3">
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums">
+            {everything.length}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Prospects
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums text-accent">
+            {bandCount("hot")}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Hot
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums text-amber-700">
+            {bandCount("warm")}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Warm
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums text-slate-500">
+            {bandCount("cold")}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Cold
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums">
+            {statusCount("contacted") + statusCount("replied")}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            In talks
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums">{draftsReady}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Drafts ready
+          </dt>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <dd className="text-xl font-extrabold tabular-nums">
+            {followupsSet}
+          </dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Follow-ups set
+          </dt>
+        </div>
+      </dl>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <form className="flex flex-wrap gap-2" method="get">
           <select
             name="band"
             defaultValue={band || ""}
-            className="rounded border border-stone-300 bg-white px-2 py-1.5 text-sm"
+            aria-label="Filter by score band"
+            className="input"
           >
             <option value="">All bands</option>
             <option value="hot">Hot</option>
@@ -123,82 +192,53 @@ export default async function BoardPage({
             <option value="cold">Cold</option>
           </select>
           <input
-            name="location"
-            defaultValue={params.location || ""}
-            placeholder="Filter by location"
-            className="rounded border border-stone-300 bg-white px-2 py-1.5 text-sm"
+            name="q"
+            defaultValue={query}
+            placeholder="Search name, place, site, OTA…"
+            aria-label="Search prospects"
+            className="input w-64"
           />
-          <button
-            type="submit"
-            className="rounded bg-brand px-3 py-1.5 text-sm font-semibold text-white"
-          >
+          <button type="submit" className="btn-ghost !py-2">
             Filter
           </button>
         </form>
-      </div>
-
-      {/* Pipeline stats strip */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-stone-300 bg-white px-4 py-3 text-sm">
-        <span>
-          <span className="text-lg font-bold text-brand-dark">{all.length}</span>{" "}
-          <span className="text-stone-600">prospects</span>
-        </span>
-        <span className="text-stone-600">
-          Score:{" "}
-          <span className="font-semibold text-accent">{hotCount} Hot</span>
-          {" · "}
-          <span className="font-semibold text-amber-700">{warmCount} Warm</span>
-          {" · "}
-          <span className="font-semibold text-stone-500">{coldCount} Cold</span>
-          {" · "}
-          <span className="font-semibold">{unscoredCount} not scored</span>
-        </span>
-        <span className="text-stone-600">
-          Status:{" "}
-          {PROSPECT_STATUSES.map((s, i) => (
-            <span key={s}>
-              {i > 0 && " · "}
-              <span className="font-semibold">{statusCounts[s]}</span> {PROSPECT_STATUS_LABELS[s]}
-            </span>
-          ))}
-        </span>
-        <span className="text-stone-600">
-          <span className="font-semibold text-brand-dark">{draftsReady}</span>{" "}
-          drafts ready ·{" "}
-          <span className="font-semibold text-brand-dark">{followupsScheduled}</span>{" "}
-          follow-ups scheduled
-        </span>
-      </div>
-
-      {/* Batch run — one agent run per New prospect */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <BatchRunButton newCount={newCount} />
-        <p className="text-xs text-stone-500">
-          Runs the agent on every New prospect — one run each, skips any
-          already running.
-        </p>
+        {(band || query) && (
+          <p className="text-sm text-stone-600">
+            Showing {prospects.length} of {everything.length}{" "}
+            <Link href="/" className="font-semibold text-brand hover:underline">
+              Clear
+            </Link>
+          </p>
+        )}
       </div>
 
       <AddProspectForm />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {PROSPECT_STATUSES.map((status) => {
           const cards = prospects.filter((p) => p.status === status);
           return (
             <section
               key={status}
-              className="rounded-lg border border-stone-300 bg-stone-100 p-2"
+              aria-label={`${PROSPECT_STATUS_LABELS[status]} prospects`}
+              className="flex h-[62vh] min-h-80 flex-col rounded-xl bg-stone-800/[0.05] p-2"
             >
-              <h2 className="mb-2 flex items-center justify-between px-1 pt-1 text-sm font-bold">
-                {PROSPECT_STATUS_LABELS[status]}
-                <span className="rounded-full bg-stone-300 px-2 py-0.5 text-xs">
+              <h2 className="mb-2 flex shrink-0 items-center justify-between px-1.5 pt-1 text-[13px] font-bold">
+                <span className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 rounded-full ${COLUMN_DOT[status]}`}
+                  />
+                  {PROSPECT_STATUS_LABELS[status]}
+                </span>
+                <span className="badge bg-white tabular-nums text-stone-600 shadow-sm">
                   {cards.length}
                 </span>
               </h2>
-              <div className="space-y-2">
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5">
                 {cards.length === 0 ? (
-                  <p className="px-1 py-2 text-xs text-stone-500">
-                    No prospects here yet.
+                  <p className="rounded-lg border border-dashed border-stone-300 px-2 py-4 text-center text-xs text-stone-400">
+                    Nothing here yet
                   </p>
                 ) : (
                   cards.map((p) => (

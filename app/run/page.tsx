@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { getLatestRun, getProspect, getRun, listProspects } from "@/lib/db";
+import {
+  getLatestRun,
+  getProspect,
+  getRun,
+  listAllRuns,
+  listProspects,
+} from "@/lib/db";
+import { formatWhen } from "@/lib/format";
 import type { Prospect, RunStep } from "@/lib/types";
-import StartRunButton from "@/components/StartRunButton";
+import BatchRunButton from "@/components/BatchRunButton";
 import RunAutoRefresh from "@/components/RunAutoRefresh";
+import RunStarter from "@/components/RunStarter";
+import StartRunButton from "@/components/StartRunButton";
 
 export const dynamic = "force-dynamic";
 
@@ -112,8 +121,8 @@ function StepTrace({ steps }: { steps: RunStep[] }) {
           )}
           {(step.started || step.finished) && (
             <p className="mt-2 text-xs tabular-nums text-stone-400">
-              {step.started ? `started ${step.started}` : ""}
-              {step.finished ? `, finished ${step.finished}` : ""}
+              {step.started ? `started ${formatWhen(step.started)}` : ""}
+              {step.finished ? `, finished ${formatWhen(step.finished)}` : ""}
             </p>
           )}
         </li>
@@ -149,18 +158,26 @@ export default async function RunPage({
 }) {
   const params = await searchParams;
   const runId = params.id ? Number(params.id) : NaN;
-  const run = await (Number.isFinite(runId) ? getRun(runId) : getLatestRun());
+  const [run, runs, prospects] = await Promise.all([
+    Number.isFinite(runId) ? getRun(runId) : getLatestRun(),
+    listAllRuns(50),
+    listProspects(),
+  ]);
   const runProspect = run ? await getProspect(run.prospect_id) : null;
-  const prospects = await listProspects();
   const live =
     !!run && (run.status === "queued" || run.status === "running");
+  const newCount = prospects.filter((p) => p.status === "new").length;
+  const activeCount = runs.filter(
+    (r) => r.status === "queued" || r.status === "running",
+  ).length;
+  const nameById = new Map(prospects.map((p) => [p.id, p.name]));
 
   return (
     <div>
-      <h1 className="page-title">Run view</h1>
+      <h1 className="page-title">Runs</h1>
       <p className="page-sub mb-4">
-        Pick a prospect, run the agent, watch the five steps land with
-        evidence attached.
+        A run is the agent doing one prospect end to end: research live,
+        score it, draft the pitch. Drafts always wait for a human.
       </p>
 
       {live && (
@@ -172,6 +189,14 @@ export default async function RunPage({
           <p>
             <strong>Agent is working.</strong> Steps update live below
             until the run finishes.
+            {activeCount > 1 && (
+              <>
+                {" "}
+                <span className="tabular-nums">{activeCount - 1}</span>{" "}
+                more run{activeCount - 1 === 1 ? " is" : "s are"} active
+                behind it.
+              </>
+            )}
           </p>
         </div>
       )}
@@ -182,20 +207,17 @@ export default async function RunPage({
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-bold">
               Run <span className="tabular-nums">#{run.id}</span>
-              {(() => {
-                const p = runProspect;
-                return p ? (
-                  <>
-                    {" for "}
-                    <Link
-                      href={`/prospects/${p.id}`}
-                      className="text-brand hover:underline"
-                    >
-                      {p.name}
-                    </Link>
-                  </>
-                ) : null;
-              })()}
+              {runProspect && (
+                <>
+                  {" for "}
+                  <Link
+                    href={`/prospects/${runProspect.id}`}
+                    className="text-brand hover:underline"
+                  >
+                    {runProspect.name}
+                  </Link>
+                </>
+              )}
             </h2>
             <span
               className={`badge ${
@@ -211,7 +233,7 @@ export default async function RunPage({
               {run.status}
             </span>
             <span className="text-xs tabular-nums text-stone-500">
-              started {run.started_at}
+              started {formatWhen(run.started_at)}
             </span>
           </div>
           <div className="mb-3">
@@ -225,36 +247,141 @@ export default async function RunPage({
         </p>
       )}
 
-      <h2 className="mb-2 text-lg font-bold">Start a run</h2>
-      <div className="space-y-2">
-        {prospects.map((p) => (
-          <div
-            key={p.id}
-            className="card flex flex-wrap items-center justify-between gap-3 !py-3"
-          >
-            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-              <Link
-                href={`/prospects/${p.id}`}
-                className="font-semibold text-brand-dark hover:underline"
-              >
-                {p.name}
-              </Link>
-              {p.demo && (
-                <span className="badge bg-accent-light text-[10px] font-bold uppercase tracking-wide text-accent">
-                  Demo
-                </span>
-              )}
-              {p.location && (
-                <span className="truncate text-sm text-stone-500">
-                  {p.location}
-                </span>
-              )}
-              <MiniScore prospect={p} />
-            </div>
-            <StartRunButton prospectId={p.id} prospectName={p.name} />
+      <section className="card mb-4" aria-label="Start a run">
+        <h2 className="mb-3 text-lg font-bold">Start a run</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <h3 className="label mb-2">Single prospect</h3>
+            <RunStarter
+              prospects={prospects.map((p) => ({
+                id: p.id,
+                name: p.name,
+                status: p.status,
+              }))}
+            />
           </div>
-        ))}
-      </div>
+          <div>
+            <h3 className="label mb-2">Whole pipeline</h3>
+            <p className="mb-2 text-sm text-stone-600">
+              Fires one run per New prospect through the same path as a
+              single run. Already-running prospects are skipped, never
+              duplicated.
+            </p>
+            <BatchRunButton newCount={newCount} />
+          </div>
+        </div>
+      </section>
+
+      <section className="card" aria-label="Run history">
+        <h2 className="mb-2 text-lg font-bold">History</h2>
+        {runs.length === 0 ? (
+          <p className="text-sm text-stone-600">
+            No runs yet. Start one above, or pick a prospect on the{" "}
+            <Link href="/" className="font-semibold text-brand hover:underline">
+              board
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500">
+                  <th scope="col" className="py-2 pr-3 font-bold">Run</th>
+                  <th scope="col" className="py-2 pr-3 font-bold">Prospect</th>
+                  <th scope="col" className="py-2 pr-3 font-bold">Status</th>
+                  <th scope="col" className="py-2 pr-3 font-bold">Started</th>
+                  <th scope="col" className="py-2 font-bold">
+                    <span className="sr-only">Retry</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {runs.map((r) => (
+                  <tr key={r.id}>
+                    <td className="py-2 pr-3">
+                      <Link
+                        href={`/run?id=${r.id}`}
+                        className="font-bold tabular-nums text-brand hover:underline"
+                      >
+                        #{r.id}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <Link
+                        href={`/prospects/${r.prospect_id}`}
+                        className="hover:underline"
+                      >
+                        {nameById.get(r.prospect_id) ??
+                          `Prospect ${r.prospect_id}`}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className={`badge ${
+                          r.status === "done"
+                            ? "bg-brand text-white"
+                            : r.status === "failed"
+                              ? "bg-red-700 text-white"
+                              : r.status === "running"
+                                ? "bg-amber-600 text-white"
+                                : "bg-stone-200 text-stone-600"
+                        }`}
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-stone-500">
+                      {formatWhen(r.started_at)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {r.status === "failed" && (
+                        <StartRunButton
+                          prospectId={r.prospect_id}
+                          label="Retry"
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-4" aria-label="Prospects">
+        <h2 className="mb-2 text-lg font-bold">Prospects</h2>
+        <div className="space-y-2">
+          {prospects.map((p) => (
+            <div
+              key={p.id}
+              className="card flex flex-wrap items-center justify-between gap-3 !py-3"
+            >
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                <Link
+                  href={`/prospects/${p.id}`}
+                  className="font-semibold text-brand-dark hover:underline"
+                >
+                  {p.name}
+                </Link>
+                {p.demo && (
+                  <span className="badge bg-accent-light text-[10px] font-bold uppercase tracking-wide text-accent">
+                    Demo
+                  </span>
+                )}
+                {p.location && (
+                  <span className="truncate text-sm text-stone-500">
+                    {p.location}
+                  </span>
+                )}
+                <MiniScore prospect={p} />
+              </div>
+              <StartRunButton prospectId={p.id} prospectName={p.name} />
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

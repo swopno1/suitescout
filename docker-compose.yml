@@ -3,6 +3,13 @@
 # DATABASE_URL points at platform-postgres:5432 (see .env.example).
 # No SQLite volume anymore; the old ./data/suitescout.db stays on the
 # VM host as the rollback copy — do not delete it.
+#
+# The 4 runtime variables (see .env.example) come from the .env file
+# next to this compose file — compose interpolates ${...} from it
+# automatically, and nothing is baked into the image (.dockerignore
+# excludes .env). DATABASE_URL and APP_PASSWORD fail fast with a
+# clear message when unset; the inference key is optional in code
+# (the app runs in fallback mode without it) but the demo wants it.
 services:
   suitescout:
     build: .
@@ -10,13 +17,36 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file:
-      - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required — copy .env.example to .env and fill it in}
+      - APP_PASSWORD=${APP_PASSWORD:?APP_PASSWORD is required — copy .env.example to .env and fill it in}
+      - VULTR_INFERENCE_API_KEY=${VULTR_INFERENCE_API_KEY:-}
+      - VULTR_INFERENCE_MODEL=${VULTR_INFERENCE_MODEL:-}
       - TZ=Asia/Dhaka
     networks:
       - vivescript-net
+    # Sandbox posture: no privilege escalation, no Linux capabilities,
+    # bounded memory/processes. The agent needs none of these to do
+    # its work (outbound HTTPS + Postgres over the private network).
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1G
+    pids_limit: 128
+    # Alive = the auth wall answers (401) or a page serves (200).
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/').then(r=>process.exit(r.status===401||r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 networks:
   # Owned by the platform stack (~/platform) — this service only joins it.

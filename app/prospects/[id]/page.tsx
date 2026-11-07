@@ -5,9 +5,20 @@ import {
   listDraftsForProspect,
   listFollowupsForProspect,
   listRunsForProspect,
+  listStatusEvents,
 } from "@/lib/db";
-import type { ResearchData, ScoreBand } from "@/lib/types";
+import { businessDaysOut } from "@/lib/agent";
+import { formatWhen } from "@/lib/format";
+import type {
+  Draft,
+  ProspectStatusEvent,
+  ResearchData,
+  ScoreBand,
+} from "@/lib/types";
+import { PROSPECT_STATUS_LABELS, PROSPECT_STATUSES } from "@/lib/types";
 import ApproveButton from "@/components/ApproveButton";
+import EvaluatePanel from "@/components/EvaluatePanel";
+import MarkSentButton from "@/components/MarkSentButton";
 import StartRunButton from "@/components/StartRunButton";
 import StatusChanger from "@/components/StatusChanger";
 
@@ -17,6 +28,12 @@ const BAND_BAR: Record<ScoreBand, string> = {
   hot: "bg-accent",
   warm: "bg-amber-600",
   cold: "bg-slate-500",
+};
+
+const DRAFT_STAGE: Record<Draft["status"], string> = {
+  draft: "Drafted — awaiting review",
+  approved: "Approved — ready to contact",
+  sent: "Sent — move the lead to Contacted",
 };
 
 /** Score on a 0–100 meter with the 40/70 band thresholds marked. */
@@ -60,6 +77,46 @@ function ScoreMeter({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Pipeline position: every visited stage with its timestamp. */
+function LeadTimeline({ events }: { events: ProspectStatusEvent[] }) {
+  const visited = new Map(events.map((e) => [e.to_status, e.created_at]));
+  return (
+    <ol className="flex flex-wrap items-center gap-y-2">
+      {PROSPECT_STATUSES.map((s, i) => {
+        const at = visited.get(s);
+        const last = i === PROSPECT_STATUSES.length - 1;
+        return (
+          <li key={s} className="flex items-center">
+            <span
+              className={`flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center ${
+                at ? "bg-brand-dark text-cream" : "bg-stone-100 text-stone-400"
+              }`}
+              title={at ? `Reached ${formatWhen(at)}` : "Not reached yet"}
+            >
+              <span className="text-xs font-bold">
+                {PROSPECT_STATUS_LABELS[s]}
+              </span>
+              <span className="text-[11px] tabular-nums opacity-80">
+                {at ? formatWhen(at) : "—"}
+              </span>
+            </span>
+            {!last && (
+              <span
+                aria-hidden="true"
+                className={`mx-1 h-0.5 w-4 rounded-full sm:w-6 ${
+                  visited.get(PROSPECT_STATUSES[i + 1])
+                    ? "bg-brand"
+                    : "bg-stone-200"
+                }`}
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -149,9 +206,12 @@ export default async function ProspectDetailPage({
   const prospect = await getProspect(Number(id));
   if (!prospect) notFound();
 
-  const drafts = await listDraftsForProspect(prospect.id);
-  const runs = await listRunsForProspect(prospect.id);
-  const followups = await listFollowupsForProspect(prospect.id);
+  const [drafts, runs, followups, events] = await Promise.all([
+    listDraftsForProspect(prospect.id),
+    listRunsForProspect(prospect.id),
+    listFollowupsForProspect(prospect.id),
+    listStatusEvents(prospect.id),
+  ]);
 
   return (
     <div>
@@ -195,6 +255,9 @@ export default async function ProspectDetailPage({
           )}
           <span className="text-stone-400"> · Source: {prospect.source}</span>
         </p>
+        <p className="mt-1 text-xs tabular-nums text-stone-400">
+          Added {formatWhen(prospect.created_at)}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-3">
           <StartRunButton
             prospectId={prospect.id}
@@ -206,6 +269,14 @@ export default async function ProspectDetailPage({
           />
         </div>
       </div>
+
+      <section className="card mb-4" aria-label="Lead evaluation">
+        <h2 className="mb-3 text-lg font-bold">Position</h2>
+        <div className="mb-4 overflow-x-auto pb-1">
+          <LeadTimeline events={events} />
+        </div>
+        <EvaluatePanel prospectId={prospect.id} />
+      </section>
 
       <section className="card mb-4" aria-label="Fit score">
         <h2 className="mb-3 text-lg font-bold">Fit score</h2>
@@ -282,12 +353,29 @@ export default async function ProspectDetailPage({
                     {d.status}
                   </span>
                 </div>
+                <p className="mt-1.5 text-xs text-stone-500">
+                  {DRAFT_STAGE[d.status]} · drafted{" "}
+                  <span className="tabular-nums">{formatWhen(d.created_at)}</span>
+                  {d.approved_at && (
+                    <>
+                      {" · approved "}
+                      <span className="tabular-nums">{formatWhen(d.approved_at)}</span>
+                    </>
+                  )}
+                  {d.sent_at && (
+                    <>
+                      {" · sent "}
+                      <span className="tabular-nums">{formatWhen(d.sent_at)}</span>
+                    </>
+                  )}
+                </p>
                 <p className="mono-block mt-2 !bg-stone-50">{d.body}</p>
-                {d.status === "draft" && (
-                  <div className="mt-2">
-                    <ApproveButton draftId={d.id} />
-                  </div>
-                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {d.status === "draft" && <ApproveButton draftId={d.id} />}
+                  {d.status === "approved" && (
+                    <MarkSentButton draftId={d.id} />
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -325,7 +413,7 @@ export default async function ProspectDetailPage({
                   {r.status}
                 </span>
                 <span className="text-xs tabular-nums text-stone-400">
-                  {r.started_at}
+                  {formatWhen(r.started_at)}
                 </span>
               </li>
             ))}
@@ -334,16 +422,36 @@ export default async function ProspectDetailPage({
         {followups.length > 0 && (
           <div className="mt-3 border-t border-stone-100 pt-3">
             <h3 className="label mb-1.5">Follow-ups</h3>
-            <ul className="space-y-1 text-sm">
-              {followups.map((f) => (
-                <li key={f.id}>
-                  Due in{" "}
-                  <span className="font-bold tabular-nums">
-                    {f.due_after_days}
-                  </span>{" "}
-                  business days, {f.status}
-                </li>
-              ))}
+            <ul className="space-y-1.5 text-sm">
+              {followups.map((f) => {
+                const due = businessDaysOut(
+                  f.due_after_days,
+                  Date.parse(f.created_at),
+                );
+                const overdue =
+                  f.status === "pending" &&
+                  Date.parse(due) < Date.now() - 24 * 60 * 60 * 1000;
+                return (
+                  <li key={f.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span>
+                      Due{" "}
+                      <strong className="tabular-nums">{due}</strong>
+                      {overdue && (
+                        <span className="badge ml-2 bg-red-700 text-white">
+                          overdue
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-stone-500">
+                      ({f.due_after_days} business days after{" "}
+                      <span className="tabular-nums">
+                        {formatWhen(f.created_at)}
+                      </span>
+                      , {f.status})
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

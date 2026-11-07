@@ -6,9 +6,12 @@ import { useState } from "react";
 export default function StartRunButton({
   prospectId,
   prospectName,
+  label,
 }: {
   prospectId: number;
-  prospectName: string;
+  prospectName?: string;
+  /** Short override (e.g. "Retry"); defaults to "Run agent on <name>". */
+  label?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -40,7 +43,7 @@ export default function StartRunButton({
         disabled={busy}
         className="btn-accent shrink-0"
       >
-        {busy ? "Queuing…" : `Run agent on ${prospectName}`}
+        {busy ? "Queuing…" : (label ?? `Run agent on ${prospectName ?? "prospect"}`)}
       </button>
       {error && <span className="text-sm text-red-700">{error}</span>}
     </span>

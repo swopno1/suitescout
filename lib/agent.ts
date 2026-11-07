@@ -27,7 +27,9 @@ import {
   listDraftsForProspect,
   listFollowupsForProspect,
 } from "./db";
+import { businessDaysOut } from "./business-days";
 import { extractResearch } from "./research";
+import { displayName } from "./prospect-label";
 import { scoreResearch } from "./scoring";
 import { chatCompletion, isInferenceConfigured } from "./inference";
 import type { Prospect, ResearchData, RunStep } from "./types";
@@ -62,27 +64,18 @@ export function pickObservation(research: ResearchData): string {
   return "your guests can only reach you by phone or message — there's no online booking";
 }
 
-/** Business-day date N business days out (Mon–Fri), for the follow-up. */
-function businessDaysOut(days: number): string {
-  const d = new Date();
-  let added = 0;
-  while (added < days) {
-    d.setDate(d.getDate() + 1);
-    const day = d.getDay();
-    if (day !== 0 && day !== 6) added += 1;
-  }
-  return d.toISOString().slice(0, 10);
-}
+export { businessDaysOut } from "./business-days";
 
 function templateEmail(
   prospect: Prospect,
   observation: string,
 ): { subject: string; body: string } {
-  const subject = `${prospect.name} — your bookings could stay with you`;
+  const name = displayName(prospect);
+  const subject = `${name} — your bookings could stay with you`;
   const body = [
-    `Hi ${prospect.name} team,`,
+    `Hi ${name} team,`,
     ``,
-    `I came across ${prospect.name} and noticed ${observation}.`,
+    `I came across ${name} and noticed ${observation}.`,
     ``,
     `ViveReply Suite is a resort property management system with a direct-booking website — your rooms, your bookings, your guest data, in one place. Resorts using it stop routing every guest through phone calls and third-party sellers.`,
     ``,
@@ -99,7 +92,7 @@ function templateWhatsApp(
   observation: string,
 ): string {
   return (
-    `Hi, I'm Md Amir from ViveReply. I noticed ${observation} at ${prospect.name}. ` +
+    `Hi, I'm Md Amir from ViveReply. I noticed ${observation} at ${displayName(prospect)}. ` +
     `We build direct-booking websites + a resort management system for properties like yours, so bookings stay with you instead of going through middlemen. ` +
     `Would a quick 15-minute demo this week be useful?`
   );
@@ -111,7 +104,7 @@ function templateFollowup(
   dueDate: string,
 ): string {
   return (
-    `Hi ${prospect.name} team — following up on my note about ${observation}. ` +
+    `Hi ${displayName(prospect)} team — following up on my note about ${observation}. ` +
     `If direct booking is on your mind before peak season, a 15-minute demo is the fastest way to see it on your own property. ` +
     `Happy to work around your schedule — aiming for ${dueDate}. — Md Amir, ViveReply`
   );
@@ -133,7 +126,7 @@ async function llmReasons(
         {
           role: "user",
           content: [
-            `Prospect: ${prospect.name} (${prospect.location ?? "Bangladesh"}).`,
+            `Prospect: ${displayName(prospect)} (${prospect.location ?? "Bangladesh"}).`,
             `Research facts: ${JSON.stringify(research)}`,
             `Scored signals (already decided by the rubric — do not change the points):`,
             ...reasons,
@@ -176,7 +169,7 @@ async function llmDraft(
         {
           role: "user",
           content: [
-            `Write ${channel} to ${prospect.name} (${prospect.location ?? "Bangladesh"}).`,
+            `Write ${channel} to ${displayName(prospect)} (${prospect.location ?? "Bangladesh"}).`,
             `Genuine observation: ${observation}.`,
             kind === "email"
               ? "Format: first line 'Subject: ...', then a blank line, then the body. Sign as Md Amir Hossain, ViveReply."
@@ -400,7 +393,7 @@ export async function runAgent(runId: number): Promise<void> {
     const followupDraft = await createDraft({
       prospectId: prospect.id,
       channel: "email",
-      subject: `Re: ${prospect.name} — quick follow-up`,
+      subject: `Re: ${displayName(prospect)} — quick follow-up`,
       body: templateFollowup(prospect, observation, dueDate),
     });
     await createFollowup({

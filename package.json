@@ -7,6 +7,8 @@
   "scripts": {
     "build": "next build",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite-to-postgres.ts",
+    "db:seed": "tsx scripts/seed-from-json.ts",
+    "db:seed:export": "python3 scripts/export-sqlite-seed.py",
     "dev": "next dev",
     "start": "next start"
   },
