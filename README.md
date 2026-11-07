@@ -146,9 +146,11 @@ the only legs that leave the VM.
   owner-only test email in Settings.
 - **Sending limits.** Outreach is capped at 10 sends per rolling 24
   hours by default (`DAILY_SEND_CAP`, max 100). A draft that was
-  already sent cannot send again (the send is recorded per draft), so
-  one prospect gets one email per approved draft. Outgoing mail
-  carries a `List-Unsubscribe` mailto header and a reply-STOP footer.
+  already sent cannot send again, and a prospect that already
+  received an email cannot receive another — one email per prospect,
+  however triggered (that guard currently also blocks follow-up
+  emails — see Current limitations). Outgoing mail carries a
+  `List-Unsubscribe` mailto header and a reply-STOP footer.
 
 ## Login
 
@@ -207,8 +209,9 @@ pnpm dev            # http://localhost:3000
 First boot creates the schema (`CREATE TABLE IF NOT EXISTS`) and,
 when the `prospects` table is empty, seeds the 20 batch-3 resorts
 (source: the founder's own lead research, 2026-10-17 — names,
-websites and locations only, no contact details). A database that
-already has prospects is never re-seeded. The demo trio — The Cox
+websites and locations only, plus public listing URLs on four
+prospects; no contact details). A database that already has prospects
+is never re-seeded. The demo trio — The Cox
 Beach Resort, Sundori Eco Resort, Balishira Resort — is flagged DEMO
 on the board: DEMO means a seeded demo prospect used in the
 walkthrough video.
@@ -412,10 +415,10 @@ Stated plainly, because a judge will find them anyway:
 - **No non-root user in the container.** The Dockerfile runs as root;
   the compose file mitigates with `cap_drop: ALL`,
   `no-new-privileges: true`, `mem_limit: 1G` and `pids_limit: 128`.
-- **Test-email audit gap.** On the test-email success path the sends
-  row is recorded with `resend_id` null even though Resend returned
-  an id (the main send path records it correctly). One-line fix, see
-  `FIXES-FOR-FOUNDER.md` in the submission polish folder.
+- **One email per prospect — follow-ups included.** The guard that
+  stops duplicate outreach also blocks a second email to the same
+  prospect, so follow-up emails cannot go out until the guard learns
+  a follow-up exception.
 
 ## What it becomes after the hackathon
 
@@ -429,8 +432,10 @@ and the rubric gets sharper with each real outcome.
 - **No *Suite* prices anywhere.** Suite pricing is negotiated per
   project and stays private — no Suite fee figures in code, drafts,
   docs, or the UI.
-- **No prospect contact details.** No phone numbers or email addresses
-  in this repo (seed data carries names, websites, locations only).
+- **No real prospect contact details.** No real phone numbers or
+  email addresses in this repo — seed data carries names, websites,
+  locations (plus public listing URLs on four), and test fixtures use
+  obviously-fake numbers (`01700000000`-style).
 - **Never invent.** Every agent claim needs a source URL; unknown stays
   unknown.
 - **Human approves every send** — except the owner-only test email in

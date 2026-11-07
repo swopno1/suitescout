@@ -11,3 +11,5 @@ data/*.db-shm
 
 docs/*
 tsconfig.tsbuildinfo
+# Nightly pg-backup.sh dumps (VM) — never commit database dumps.
+backups/

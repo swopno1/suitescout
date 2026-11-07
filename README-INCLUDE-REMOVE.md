@@ -276,3 +276,40 @@ follows the include list section-for-section, in this order.
 - **"Drafts ready" numbers.** The count includes sent drafts
   (`lib/db.ts` counts all statuses). *No drafts-ready number is
   cited anywhere in the new docs.*
+
+## RE-VERIFICATION ADDENDUM (tip `c17ede9` + re-inspection pass)
+
+A second agent re-checked every claim above against the code at
+`c17ede9` (which landed `FIXES-FOR-FOUNDER.md` items 1–6) and found
+the audit accurate, plus the following:
+
+- **F6 (new FALSE) — "one prospect gets one email per approved
+  draft".** The guard is `hasEmailSendForProspect`: one email per
+  prospect *total*, however triggered — a second approved draft for
+  the same prospect cannot send either. *Corrected in the README
+  ("one email per prospect, however triggered") and added to
+  "Current limitations" (the guard blocks follow-up emails until it
+  learns a follow-up exception).*
+- **Stale limitation removed.** The "Test-email audit gap" bullet
+  was fixed by `c17ede9` (success path now records `resend_id:
+  data.id`) but still listed as a limitation. *Removed.*
+- **Founder-fix item 9 elevated to pre-submission.** The login page
+  ("Owner access only…", explains nothing) is the first screen a
+  judge sees; leaving it parked until after judging was backwards.
+  *Reworded pre-submission: one product line + demo-login welcome.*
+- **New UI contradiction fixed.** The Settings model label read
+  "Qwen 3.8 Flash Next — scoring / classification" while the README
+  truthfully says Qwen is not used for scoring. *Label trimmed to
+  the model name.*
+- **Fixture hygiene.** Phone-like test fixtures (`01766557760`)
+  looked plausibly real. *Now `01700000000`-style; 35/35 checks
+  still pass. The README's "no real prospect contact details" rule
+  now matches the repo literally.*
+- **`backups/` gitignored.** Nightly DB dumps can no longer be
+  committed by accident.
+- **Checklist + fixes statuses synced.** `SUBMISSION-CHECKLIST.md`
+  and `FIXES-FOR-FOUNDER.md` now record landed-vs-parked status at
+  this tip instead of describing a push from a polish folder.
+- **Battery re-run at the new tip:** `tsc` clean, `pnpm build`
+  green, scoring 6/6, ui-proof 35/35 pure — the first validation of
+  the `c17ede9` lib changes.

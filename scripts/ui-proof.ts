@@ -297,16 +297,16 @@ check("normalize: emails canonical, junk rejected", () => {
   assert.equal(normalizeEmail("not-an-email"), null);
 });
 check("normalize: BD mobiles to +880, fragments rejected", () => {
-  assert.equal(normalizeBdPhone("01811-223344"), "+8801811223344");
-  assert.equal(normalizeBdPhone("(+880) 18-11-223344"), "+8801811223344");
-  assert.equal(normalizeBdPhone("+88 01766557760"), "+8801766557760");
-  assert.equal(normalizeBdPhone("008801766557760"), "+8801766557760");
+  assert.equal(normalizeBdPhone("01800-000000"), "+8801800000000");
+  assert.equal(normalizeBdPhone("(+880) 18-00-000000"), "+8801800000000");
+  assert.equal(normalizeBdPhone("+88 01700000000"), "+8801700000000");
+  assert.equal(normalizeBdPhone("008801700000000"), "+8801700000000");
   assert.equal(normalizeBdPhone("01234"), null);
   assert.equal(normalizeBdPhone("88029112233"), null);
 });
 check("normalize: whatsapp digits, facebook canonical", () => {
-  assert.equal(normalizeWhatsapp("+8801766557760"), "8801766557760");
-  assert.equal(normalizeWhatsapp("01766557760"), "8801766557760");
+  assert.equal(normalizeWhatsapp("+8801700000000"), "8801700000000");
+  assert.equal(normalizeWhatsapp("01700000000"), "8801700000000");
   assert.equal(normalizeWhatsapp("abc"), null);
   assert.equal(
     normalizeFacebookUrl("https://m.facebook.com/CoralBay/?ref=x"),
@@ -363,7 +363,7 @@ check("scout: overpass parse merges split records, drops unnamed", () => {
   const out = parseOverpass({
     elements: [
       { tags: { tourism: "hotel" } },
-      { lat: 1, lon: 2, tags: { name: "Sea Pearl", phone: "01766557760" } },
+      { lat: 1, lon: 2, tags: { name: "Sea Pearl", phone: "01700000000" } },
       {
         center: { lat: 1, lon: 2 },
         tags: {
@@ -377,7 +377,7 @@ check("scout: overpass parse merges split records, drops unnamed", () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].website, "https://seapearl.example.com");
   assert.equal(out[0].email, "info@seapearl.example.com");
-  assert.equal(out[0].phone, "+8801766557760");
+  assert.equal(out[0].phone, "+8801700000000");
   assert.equal(out[0].phone_raw, null);
 });
 check("scout: listed contact round-trips, garbage is null", () => {

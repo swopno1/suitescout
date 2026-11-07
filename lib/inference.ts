@@ -17,7 +17,7 @@ export const KNOWN_MODELS = [
   },
   {
     id: "qwen3.8-flash-next",
-    label: "Qwen 3.8 Flash Next — scoring / classification",
+    label: "Qwen 3.8 Flash Next",
   },
   { id: "glm-5.3-flash", label: "GLM 5.3 Flash" },
   { id: "mimo-v2.6-flash", label: "MiMo V2.6 Flash" },

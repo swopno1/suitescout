@@ -51,7 +51,9 @@ export default async function LoginPage({
         </div>
         <h1 className="mb-1 text-lg font-bold">Log in</h1>
         <p className="mb-4 text-sm text-stone-600">
-          Owner access only — this tool runs one pipeline, yours.
+          SuiteScout researches resort prospects, scores them, and
+          drafts the first message — you approve, it sends. Log in
+          with the demo credentials from the submission.
         </p>
         <LoginForm next={next} configured={Boolean(secret)} />
       </div>
