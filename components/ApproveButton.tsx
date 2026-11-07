@@ -17,6 +17,8 @@ export default function ApproveButton({ draftId }: { draftId: number }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to approve draft");
+      // Refresh shows the outcome: Sent stage when auto-send fired,
+      // Approved + Send button when it stayed manual.
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to approve draft");

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProspect } from "@/lib/db";
+import { getProspect, hasActiveRun } from "@/lib/db";
 import { startRun } from "@/lib/runner";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,12 @@ export async function POST(req: NextRequest) {
   const prospect = await getProspect(prospectId);
   if (!prospect) {
     return NextResponse.json({ error: "prospect not found" }, { status: 404 });
+  }
+  if (await hasActiveRun(prospectId)) {
+    return NextResponse.json(
+      { error: "a run is already active for this prospect" },
+      { status: 409 },
+    );
   }
   const run = await startRun(prospectId);
   return NextResponse.json({ run }, { status: 201 });

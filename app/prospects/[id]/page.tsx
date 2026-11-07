@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getProspect,
+  listSendsForProspect,
   listDraftsForProspect,
   listFollowupsForProspect,
   listRunsForProspect,
@@ -20,6 +21,8 @@ import { PROSPECT_STATUS_LABELS, PROSPECT_STATUSES } from "@/lib/types";
 import ApproveButton from "@/components/ApproveButton";
 import EvaluatePanel from "@/components/EvaluatePanel";
 import SafeLink from "@/components/SafeLink";
+import SendButton from "@/components/SendButton";
+import { isEmailConfigured } from "@/lib/email";
 import MarkSentButton from "@/components/MarkSentButton";
 import StartRunButton from "@/components/StartRunButton";
 import StatusChanger from "@/components/StatusChanger";
@@ -318,12 +321,21 @@ export default async function ProspectDetailPage({
   const prospect = await getProspect(Number(id));
   if (!prospect) notFound();
 
-  const [drafts, runs, followups, events] = await Promise.all([
+  const [drafts, runs, followups, events, sends] = await Promise.all([
     listDraftsForProspect(prospect.id),
     listRunsForProspect(prospect.id),
     listFollowupsForProspect(prospect.id),
     listStatusEvents(prospect.id),
+    listSendsForProspect(prospect.id),
   ]);
+  const sendByDraft = new Map(
+    sends.filter((s) => s.draft_id !== null).map((s) => [s.draft_id as number, s]),
+  );
+  const emailTo =
+    prospect.research?.contacts?.emails[0] ??
+    listedContact(prospect.contact)?.email ??
+    null;
+  const canEmail = isEmailConfigured();
 
   return (
     <div>
@@ -484,9 +496,37 @@ export default async function ProspectDetailPage({
                   )}
                 </p>
                 <p className="mono-block mt-2 !bg-stone-50">{d.body}</p>
+                {d.channel === "email" && sendByDraft.get(d.id) && (
+                  <p className="mt-1.5 text-xs text-stone-500">
+                    {(() => {
+                      const s = sendByDraft.get(d.id)!;
+                      return s.status === "sent"
+                        ? `Sent via ${s.auto ? "auto" : "manual"} to ${s.to_email}`
+                        : `Send failed: ${s.error ?? "unknown error"}`;
+                    })()}
+                  </p>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {d.status === "draft" && <ApproveButton draftId={d.id} />}
-                  {d.status === "approved" && (
+                  {d.status === "approved" && d.channel === "email" && (
+                    <>
+                      {canEmail ? (
+                        emailTo ? (
+                          <SendButton draftId={d.id} to={emailTo} />
+                        ) : (
+                          <span className="text-xs text-stone-500">
+                            No email on file — re-run to capture one.
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-xs text-stone-500">
+                          Add RESEND_API_KEY to send email.
+                        </span>
+                      )}
+                      <MarkSentButton draftId={d.id} />
+                    </>
+                  )}
+                  {d.status === "approved" && d.channel !== "email" && (
                     <MarkSentButton draftId={d.id} />
                   )}
                 </div>

@@ -2,7 +2,7 @@
 // pipeline position, decide a verdict + the one suggested action. The
 // API route may add an LLM-worded summary on top; the verdict itself
 // is always these rules, so keyless behavior is identical.
-import type { ProspectStatus } from "./types";
+import type { Draft, Prospect, ProspectStatus } from "./types";
 
 export type LeadVerdict = "on-track" | "needs-nudge" | "stalled" | "closed";
 
@@ -31,6 +31,42 @@ export interface Evaluation {
   verdict: LeadVerdict;
   reasons: string[];
   suggested_action: string;
+}
+
+export interface AutoQualification {
+  ok: boolean;
+  /** Every failed check, in plain words — shown when a send stays manual. */
+  reasons: string[];
+  /** Researched address to send to (strict: listed-only never auto-sends). */
+  to: string | null;
+}
+
+/** Auto-send fitness — pure lead/draft rules. The send path adds the
+ *  live gates on top (kill switch, prior sends, daily cap). Strict by
+ *  design: hot band, researched email, pre-contact stage, approved
+ *  email draft. Anything less stays one human click away. */
+export function qualifiesForAutoSend(
+  prospect: Prospect,
+  draft: Draft,
+): AutoQualification {
+  const reasons: string[] = [];
+  if (draft.channel !== "email") {
+    reasons.push(`channel is ${draft.channel}, not email`);
+  }
+  if (draft.status !== "approved") {
+    reasons.push(`draft is ${draft.status}, not approved`);
+  }
+  if (prospect.score_band !== "hot") {
+    reasons.push(`band is ${prospect.score_band ?? "unscored"}, not hot`);
+  }
+  if (!["researched", "drafted"].includes(prospect.status)) {
+    reasons.push(`stage is ${prospect.status}, past first contact`);
+  }
+  const to = prospect.research?.contacts?.emails[0] ?? null;
+  if (!to) {
+    reasons.push("no researched email on file");
+  }
+  return { ok: reasons.length === 0, reasons, to };
 }
 
 const DAY = 24 * 60 * 60 * 1000;

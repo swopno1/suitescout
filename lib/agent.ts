@@ -71,18 +71,17 @@ function templateEmail(
   observation: string,
 ): { subject: string; body: string } {
   const name = displayName(prospect);
-  const subject = `${name} — your bookings could stay with you`;
+  const subject = `${name} — quick thought on your bookings`;
   const body = [
     `Hi ${name} team,`,
     ``,
-    `I came across ${name} and noticed ${observation}.`,
+    `I was looking at your property and noticed ${observation}. That usually means real demand leaking to middlemen every week.`,
     ``,
-    `ViveReply Suite is a resort property management system with a direct-booking website — your rooms, your bookings, your guest data, in one place. Resorts using it stop routing every guest through phone calls and third-party sellers.`,
+    `We build direct-booking websites with a full resort management system behind them — your rooms, your bookings, your guest data, in one place. No dependency on phone calls and third-party sellers.`,
     ``,
-    `Would a 15-minute demo this week be useful? I can show you how your own property would look with direct booking.`,
+    `Would a 15-minute demo be useful? I'd show you exactly how your own property would look.`,
     ``,
-    `Best,`,
-    `Md Amir Hossain — ViveReply (vivereply.com/suite)`,
+    `Md Amir Hossain, ViveReply`,
   ].join("\n");
   return { subject, body };
 }
@@ -163,7 +162,9 @@ async function llmDraft(
           role: "system",
           content: [
             "You draft first-touch outreach for ViveReply Suite — a resort property management system with a direct-booking website.",
-            "HARD RULES: never mention any price or fee; no fake scarcity or urgency; no invented features, statistics, or claims; include the genuine observation given; keep it short and human; end with a 15-minute demo ask.",
+            "Write like a person typing between meetings, not a newsletter: short sentences, plain words, zero throat-clearing (never 'I hope this finds you well', 'just reaching out', 'cutting-edge', 'leverage', 'streamline').",
+            "Open with the genuine observation in the first line — the reader should feel you actually looked at their property. One idea per email, one soft ask: a 15-minute demo. Under 120 words for email.",
+            "HARD RULES: never mention any price or fee; no fake scarcity or urgency; no invented features, statistics, or claims; sign exactly 'Md Amir Hossain, ViveReply' for email and 'Md Amir, ViveReply' for WhatsApp.",
           ].join(" "),
         },
         {

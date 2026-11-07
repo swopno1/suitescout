@@ -4,7 +4,7 @@
 # No SQLite volume anymore; the old ./data/suitescout.db stays on the
 # VM host as the rollback copy — do not delete it.
 #
-# The 4 runtime variables (see .env.example) come from the .env file
+# The runtime variables (see .env.example) come from the .env file
 # next to this compose file — compose interpolates ${...} from it
 # automatically, and nothing is baked into the image (.dockerignore
 # excludes .env). DATABASE_URL and APP_PASSWORD fail fast with a
@@ -22,6 +22,11 @@ services:
       - APP_PASSWORD=${APP_PASSWORD:?APP_PASSWORD is required — copy .env.example to .env and fill it in}
       - VULTR_INFERENCE_API_KEY=${VULTR_INFERENCE_API_KEY:-}
       - VULTR_INFERENCE_MODEL=${VULTR_INFERENCE_MODEL:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-amir@mail.vivereply.com}
+      - RESEND_FROM_NAME=${RESEND_FROM_NAME:-Md Amir Hossain}
+      - AUTO_SEND_ENABLED=${AUTO_SEND_ENABLED:-false}
+      - DAILY_SEND_CAP=${DAILY_SEND_CAP:-10}
       - TZ=Asia/Dhaka
     networks:
       - vivescript-net

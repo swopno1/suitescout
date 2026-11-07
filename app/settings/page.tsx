@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { businessDaysOut } from "@/lib/agent";
 import {
+  countSendsSince,
   getAllSettings,
   getDataCounts,
   listPendingFollowups,
 } from "@/lib/db";
+import {
+  autoSendEnabled,
+  dailySendCap,
+  fromAddress,
+  isEmailConfigured,
+} from "@/lib/email";
 import { formatWhen } from "@/lib/format";
 import {
   KNOWN_MODELS,
@@ -13,14 +20,17 @@ import {
 } from "@/lib/inference";
 import SettingsForm from "@/components/SettingsForm";
 import TestConnectionButton from "@/components/TestConnectionButton";
+import TestEmailForm from "@/components/TestEmailForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [settings, counts, pending] = await Promise.all([
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [settings, counts, pending, sent24h] = await Promise.all([
     getAllSettings(),
     getDataCounts(),
     listPendingFollowups(10),
+    countSendsSince(since),
   ]);
   const keyConfigured = isInferenceConfigured();
   const currentModel = settings.inference_model || getDefaultModel();
@@ -67,6 +77,45 @@ export default async function SettingsPage() {
         )}
         <div className="mt-3">
           <TestConnectionButton />
+        </div>
+      </section>
+
+      <section className="card mb-4" aria-label="Email sending">
+        <h2 className="mb-2 text-lg font-bold">Email sending</h2>
+        <p className="flex items-center gap-2 text-sm">
+          <span
+            aria-hidden="true"
+            className={`h-2.5 w-2.5 rounded-full ${isEmailConfigured() ? "bg-brand" : "bg-red-600"}`}
+          />
+          Resend key:{" "}
+          <strong>
+            {isEmailConfigured()
+              ? "configured"
+              : "not set, add RESEND_API_KEY to .env"}
+          </strong>
+        </p>
+        <p className="mt-2 text-sm">
+          From:{" "}
+          <strong className="font-mono text-[13px]">{fromAddress()}</strong>
+        </p>
+        <p className="mt-2 text-sm">
+          Auto-send:{" "}
+          <span
+            className={`badge ${autoSendEnabled() ? "bg-accent text-white" : "bg-stone-200 text-stone-600"}`}
+          >
+            {autoSendEnabled() ? "on" : "off"}
+          </span>
+        </p>
+        <p className="mt-2 max-w-prose text-sm text-stone-600">
+          Auto-send fires at approval time, only for hot leads with a
+          researched email — and never more than{" "}
+          <strong className="tabular-nums">{dailySendCap()}</strong>{" "}
+          emails per 24 hours (one per prospect).{" "}
+          <strong className="tabular-nums">{sent24h}</strong> sent in the
+          last 24h. Enable with AUTO_SEND_ENABLED=true on the server.
+        </p>
+        <div className="mt-3 border-t border-stone-100 pt-3">
+          <TestEmailForm enabled={isEmailConfigured()} />
         </div>
       </section>
 

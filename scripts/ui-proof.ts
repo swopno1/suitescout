@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { businessDaysOut } from "../lib/business-days.ts";
 import { matchesProspect, normalize } from "../lib/board-search.ts";
-import { evaluateLead, type LeadSnapshot } from "../lib/evaluate.ts";
+import { evaluateLead, qualifiesForAutoSend, type LeadSnapshot } from "../lib/evaluate.ts";
 import { formatWhen, relativeAge } from "../lib/format.ts";
 import { ipv4Blocked, ipv6Blocked, safeHttpUrl } from "../lib/safe-url.ts";
 import {
@@ -230,6 +230,29 @@ check("evaluate: contactless researched lead needs a contact", () => {
   );
   assert.equal(withContact.verdict, "on-track");
   assert.equal(withContact.suggested_action, "Review and approve a draft.");
+});
+check("evaluate: auto-send qualifies only the strict set", () => {
+  const hot = {
+    score_band: "hot",
+    status: "drafted",
+    research: { contacts: { emails: ["a@b.com"], phones: [], whatsapp: [] } },
+  };
+  const approvedEmail = { channel: "email", status: "approved" };
+  const q = qualifiesForAutoSend(hot as never, approvedEmail as never);
+  assert.equal(q.ok, true);
+  assert.equal(q.to, "a@b.com");
+  const cases = [
+    [{ ...hot, score_band: "warm" }, approvedEmail, "band"],
+    [hot, { channel: "whatsapp", status: "approved" }, "channel"],
+    [hot, { channel: "email", status: "draft" }, "status"],
+    [{ ...hot, status: "contacted" }, approvedEmail, "stage"],
+    [{ ...hot, research: { contacts: { emails: [], phones: [], whatsapp: [] } } }, approvedEmail, "email"],
+  ] as const;
+  for (const [p, d, label] of cases) {
+    const r = qualifiesForAutoSend(p as never, d as never);
+    assert.equal(r.ok, false, label);
+    assert.ok(r.reasons.length > 0, label);
+  }
 });
 check("evaluate: reply books the demo, closed rests", () => {
   const replied = evaluateLead(snap({ status: "replied" }), NOW);

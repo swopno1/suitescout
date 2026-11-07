@@ -78,6 +78,8 @@ export async function chatCompletion(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
+    // A hung provider must fail the step, never stall the run.
+    signal: AbortSignal.timeout(60000),
     body: JSON.stringify({
       model,
       messages: options.messages,
@@ -120,6 +122,7 @@ export async function listModels(): Promise<string[]> {
   }
   const res = await fetch(`${INFERENCE_BASE_URL}/models`, {
     headers: { Authorization: `Bearer ${apiKey}` },
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) {
     const text = await res.text();

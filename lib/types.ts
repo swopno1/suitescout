@@ -95,6 +95,21 @@ export interface Draft {
   sent_at: string | null;
 }
 
+/** A real send attempt through Resend — the audit trail. Failed
+ *  attempts are kept too (status=failed with the provider error). */
+export interface Send {
+  id: number;
+  prospect_id: number | null;
+  draft_id: number | null;
+  channel: string;
+  to_email: string;
+  resend_id: string | null;
+  auto: boolean;
+  status: string;
+  error: string | null;
+  created_at: string;
+}
+
 export interface Followup {
   id: number;
   prospect_id: number;
