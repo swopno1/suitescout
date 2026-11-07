@@ -95,6 +95,28 @@ export interface Draft {
   sent_at: string | null;
 }
 
+/** An area scout: place in, prospects out. Runs in the background
+ *  while the /scout view polls; phases + counts make progress visible. */
+export interface Scout {
+  id: number;
+  place: string;
+  display_name: string | null;
+  south: number | null;
+  west: number | null;
+  north: number | null;
+  east: number | null;
+  status: "running" | "done" | "failed";
+  phase: "geocoding" | "searching" | "importing" | "done";
+  found: number;
+  junk_skipped: number;
+  dupes_skipped: number;
+  imported: number;
+  prospect_ids: number[];
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+}
+
 /** A real send attempt through Resend — the audit trail. Failed
  *  attempts are kept too (status=failed with the provider error). */
 export interface Send {

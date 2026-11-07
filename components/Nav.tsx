@@ -10,6 +10,7 @@ import LogoutButton from "@/components/LogoutButton";
 
 const LINKS = [
   { href: "/", label: "Board" },
+  { href: "/scout", label: "Scout" },
   { href: "/run", label: "Run" },
   { href: "/settings", label: "Settings" },
 ];

@@ -234,7 +234,9 @@ the password from the submission). Never commit `.env`.
 | `GET /api/runs/:id` | Run trace (steps + evidence + status). |
 | `PATCH /api/prospects/:id` | Update prospect status. |
 | `GET /api/prospects/:id/evaluate` | Rules verdict on the lead's position (+ LLM summary when keyed). |
-| `POST /api/scout` | Scout an area: place name → deduped OSM prospects. |
+| `POST /api/scout` | Queue an area scout (202): place name → background geocode → search → import. Watch it on `/scout?id=…`. |
+| `GET /api/scouts` | Recent scouts (history). |
+| `GET /api/scouts/:id` | One scout + its imported prospects (live progress). |
 | `POST /api/drafts/:id/approve` | Human approval gate for a draft (auto-sends when qualified + enabled). |
 | `POST /api/drafts/:id/send` | Manual Send of an approved email draft. |
 | `POST /api/drafts/:id/sent` | Record an approved draft as sent outside the app. |
