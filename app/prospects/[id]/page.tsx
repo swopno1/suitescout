@@ -451,8 +451,8 @@ export default async function ProspectDetailPage({
         <h2 className="mb-1 text-lg font-bold">Drafts</h2>
         {drafts.length === 0 ? (
           <p className="text-sm text-stone-600">
-            No drafts yet. Drafts appear here after a run. A human
-            approves every send, the agent never sends.
+            No drafts yet. Drafts appear here after a run, and a human
+            approves every send.
           </p>
         ) : (
           <ul className="divide-y divide-stone-100">

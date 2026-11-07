@@ -5,10 +5,10 @@ import { autoSendEnabled, sendDraftEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
-/** Human gate — approves a draft so it can be sent. The agent never
- *  sends. When the kill switch is on and the lead qualifies, the
- *  approved email goes out immediately — the approval IS the human
- *  gate, so "a human approves every send" stays literally true. */
+/** Human gate — approves a draft so it can be sent. When the kill
+ *  switch is on and the lead qualifies, the approved email goes out
+ *  immediately — the approval IS the human gate, so "a human
+ *  approves every send" stays literally true. */
 export async function POST(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> },

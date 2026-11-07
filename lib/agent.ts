@@ -12,8 +12,7 @@
 //   reply and never fails a run over prose.
 // Hard rules (non-negotiable): drafts never contain prices; no fake
 // scarcity, no invented features, no invented stats; one genuine
-// observation minimum; a human approves every send — the agent never
-// sends.
+// observation minimum; a human approves every send.
 
 import {
   createDraft,

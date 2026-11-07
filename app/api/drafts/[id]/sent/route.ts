@@ -3,9 +3,10 @@ import { getDraft, markDraftSent } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** Human records an approved draft as sent (the send itself happens
- *  outside the app — there is no sender yet). Strict: only approved
- *  drafts move; anything else is a 409 with the current draft. */
+/** Human records an approved draft as sent outside the app (e.g.
+ *  forwarded from a personal inbox) — distinct from the in-app Send
+ *  that goes through Resend. Strict: only approved drafts move;
+ *  anything else is a 409 with the current draft. */
 export async function POST(
   _req: Request,
   context: { params: Promise<{ id: string }> },

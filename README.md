@@ -244,6 +244,7 @@ the password from the submission). Never commit `.env`.
 | `POST /api/settings/test` | Live inference connection check. |
 | `POST /api/settings/test-email` | Deliverability test email (cap-exempt, audited). |
 | `POST /api/auth/login` / `POST /api/auth/logout` | Session login / logout. |
+| `GET /api/auth/verify` | Session check — true when the request carries a valid login cookie. |
 
 ## What it becomes after the hackathon
 
