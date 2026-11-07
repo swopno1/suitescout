@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { after } from "next/server";
-import { createRun, getProspect } from "@/lib/db";
-import { runAgent } from "@/lib/agent";
-import { AGENT_STEPS, type RunStep } from "@/lib/types";
+import { getProspect } from "@/lib/db";
+import { startRun } from "@/lib/runner";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +22,6 @@ export async function POST(req: NextRequest) {
   if (!prospect) {
     return NextResponse.json({ error: "prospect not found" }, { status: 404 });
   }
-  const steps: RunStep[] = AGENT_STEPS.map((name) => ({
-    name,
-    status: "pending",
-    started: null,
-    finished: null,
-    evidence: [],
-    output: null,
-    note: null,
-  }));
-  const run = createRun(prospectId, steps);
-  after(async () => {
-    try {
-      await runAgent(run.id);
-    } catch (err) {
-      console.error(`runAgent(${run.id}) failed:`, err);
-    }
-  });
+  const run = startRun(prospectId);
   return NextResponse.json({ run }, { status: 201 });
 }

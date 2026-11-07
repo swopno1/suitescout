@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listProspects } from "@/lib/db";
+import { countDrafts, countFollowups, listProspects } from "@/lib/db";
 import {
   PROSPECT_STATUSES,
   PROSPECT_STATUS_LABELS,
@@ -7,6 +7,7 @@ import {
   type ScoreBand,
 } from "@/lib/types";
 import AddProspectForm from "@/components/AddProspectForm";
+import BatchRunButton from "@/components/BatchRunButton";
 
 export const dynamic = "force-dynamic";
 
@@ -16,118 +17,59 @@ const BAND_STYLES: Record<ScoreBand, string> = {
   cold: "bg-slate-500 text-white",
 };
 
-const COLUMN_DOT: Record<(typeof PROSPECT_STATUSES)[number], string> = {
-  new: "bg-stone-400",
-  researched: "bg-brand",
-  drafted: "bg-amber-600",
-  contacted: "bg-accent",
-  replied: "bg-emerald-600",
-};
-
 function ScoreBadge({ prospect }: { prospect: Prospect }) {
   if (prospect.fit_score === null || !prospect.score_band) {
     return (
-      <span className="badge bg-stone-200 text-stone-600">Not scored</span>
+      <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold text-stone-600">
+        Not scored
+      </span>
     );
   }
   return (
-    <span className={`badge ${BAND_STYLES[prospect.score_band]}`}>
-      <span className="tabular-nums">{prospect.fit_score}</span>
-      <span className="capitalize">{prospect.score_band}</span>
+    <span
+      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BAND_STYLES[prospect.score_band]}`}
+    >
+      {prospect.fit_score} · {prospect.score_band}
     </span>
   );
 }
 
 function ProspectCard({ prospect }: { prospect: Prospect }) {
   return (
-    <article className="card card-hover !p-3">
+    <article className="rounded-lg border border-stone-300 bg-white p-3">
       <div className="flex items-start justify-between gap-2">
         <Link
           href={`/prospects/${prospect.id}`}
-          className="font-semibold leading-snug text-brand-dark hover:underline"
+          className="font-semibold text-brand-dark hover:underline"
         >
           {prospect.name}
         </Link>
         {prospect.demo && (
-          <span className="badge shrink-0 bg-accent-light text-[10px] font-bold uppercase tracking-wide text-accent">
-            Demo
+          <span className="shrink-0 rounded bg-accent-light px-1.5 py-0.5 text-[10px] font-bold text-accent">
+            DEMO
           </span>
         )}
       </div>
       {prospect.location && (
-        <p className="mt-0.5 truncate text-xs text-stone-500">
-          {prospect.location}
-        </p>
+        <p className="mt-0.5 text-xs text-stone-500">{prospect.location}</p>
       )}
-      <div className="mt-2 flex items-center justify-between gap-2">
+      {prospect.website && (
+        <a
+          href={prospect.website}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block truncate text-xs text-brand hover:underline"
+        >
+          {prospect.website}
+        </a>
+      )}
+      <div className="mt-2 flex items-center justify-between">
         <ScoreBadge prospect={prospect} />
-        <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
+        <span className="text-[11px] uppercase tracking-wide text-stone-400">
           {prospect.source}
         </span>
       </div>
     </article>
-  );
-}
-
-/** Band counts that double as the band filter — one control, not two. */
-function BandStrip({
-  prospects,
-  activeBand,
-  locationQuery,
-}: {
-  prospects: Prospect[];
-  activeBand?: string;
-  locationQuery: string;
-}) {
-  const count = (band: ScoreBand) =>
-    prospects.filter((p) => p.score_band === band).length;
-  const unscored = prospects.filter((p) => p.fit_score === null).length;
-  const loc = locationQuery ? `&location=${encodeURIComponent(locationQuery)}` : "";
-  const bands: { key: ScoreBand | ""; label: string; n: number; dot: string }[] = [
-    { key: "", label: "All", n: prospects.length, dot: "bg-ink" },
-    { key: "hot", label: "Hot", n: count("hot"), dot: "bg-accent" },
-    { key: "warm", label: "Warm", n: count("warm"), dot: "bg-amber-600" },
-    { key: "cold", label: "Cold", n: count("cold"), dot: "bg-slate-500" },
-  ];
-  return (
-    <div className="card flex flex-wrap items-center gap-x-2 gap-y-2 !py-2.5">
-      {bands.map((b) => {
-        const active = (activeBand || "") === b.key;
-        return (
-          <Link
-            key={b.label}
-            href={`/?band=${b.key}${loc}`}
-            aria-current={active ? "true" : undefined}
-            className={`flex items-baseline gap-2 rounded-lg px-3 py-1.5 transition-colors ${
-              active ? "bg-brand-dark text-cream" : "hover:bg-brand-light"
-            }`}
-          >
-            <span
-              className={`text-xl font-extrabold tabular-nums ${active ? "" : b.key === "hot" ? "text-accent" : b.key === "warm" ? "text-amber-700" : b.key === "cold" ? "text-slate-500" : "text-ink"}`}
-            >
-              {b.n}
-            </span>
-            <span
-              className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${active ? "text-cream/90" : "text-stone-500"}`}
-            >
-              <span
-                aria-hidden="true"
-                className={`h-2 w-2 rounded-full ${active ? "bg-cream" : b.dot}`}
-              />
-              {b.label}
-            </span>
-          </Link>
-        );
-      })}
-      <span className="ml-auto hidden items-baseline gap-2 px-2 sm:flex">
-        <span className="text-xl font-extrabold tabular-nums text-stone-400">
-          {unscored}
-        </span>
-        <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-          unscored
-        </span>
-      </span>
-    </div>
   );
 }
 
@@ -138,86 +80,125 @@ export default async function BoardPage({
 }) {
   const params = await searchParams;
   const band = params.band || undefined;
-  const locationQuery = params.location || "";
-  const locationFilter = locationQuery.toLowerCase();
-  const all = listProspects();
-  const banded = band ? all.filter((p) => p.score_band === band) : all;
+  const locationFilter = (params.location || "").toLowerCase();
+  const all = listProspects({ band });
   const prospects = locationFilter
-    ? banded.filter((p) =>
+    ? all.filter((p) =>
         (p.location || "").toLowerCase().includes(locationFilter),
       )
-    : banded;
+    : all;
+
+  // Pipeline stats — always computed over the full board, never the
+  // filtered view, so the numbers stay comparable run to run.
+  const newCount = all.filter((p) => p.status === "new").length;
+  const hotCount = all.filter((p) => p.score_band === "hot").length;
+  const warmCount = all.filter((p) => p.score_band === "warm").length;
+  const coldCount = all.filter((p) => p.score_band === "cold").length;
+  const unscoredCount = all.filter((p) => p.fit_score === null).length;
+  const statusCounts = Object.fromEntries(
+    PROSPECT_STATUSES.map((s) => [s, all.filter((p) => p.status === s).length]),
+  ) as Record<(typeof PROSPECT_STATUSES)[number], number>;
+  const draftsReady = countDrafts();
+  const followupsScheduled = countFollowups();
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="page-title">Prospect board</h1>
-        <p className="page-sub">
-          Pipeline from first sighting to reply. Every score cites its
-          evidence.
-        </p>
-      </div>
-
-      <div className="mb-4">
-        <BandStrip
-          prospects={all}
-          activeBand={band}
-          locationQuery={locationQuery}
-        />
-      </div>
-
-      {(band || locationFilter) && (
-        <p className="mb-3 text-sm text-stone-600">
-          Showing {prospects.length} of {all.length} prospects.{" "}
-          <Link href="/" className="font-semibold text-brand hover:underline">
-            Clear filters
-          </Link>
-        </p>
-      )}
-
-      <div className="mb-4">
-        <form className="flex flex-wrap gap-2" method="get">
-          {band && <input type="hidden" name="band" value={band} />}
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Prospect board</h1>
+          <p className="text-sm text-stone-600">
+            {prospects.length} prospects · {all.length} total · New →
+            Researched → Drafted → Contacted → Replied
+          </p>
+        </div>
+        <form className="flex gap-2" method="get">
+          <select
+            name="band"
+            defaultValue={band || ""}
+            className="rounded border border-stone-300 bg-white px-2 py-1.5 text-sm"
+          >
+            <option value="">All bands</option>
+            <option value="hot">Hot</option>
+            <option value="warm">Warm</option>
+            <option value="cold">Cold</option>
+          </select>
           <input
             name="location"
-            defaultValue={locationQuery}
-            placeholder="Filter by location, e.g. Cox's Bazar"
-            aria-label="Filter by location"
-            className="input w-64"
+            defaultValue={params.location || ""}
+            placeholder="Filter by location"
+            className="rounded border border-stone-300 bg-white px-2 py-1.5 text-sm"
           />
-          <button type="submit" className="btn-ghost !py-2">
+          <button
+            type="submit"
+            className="rounded bg-brand px-3 py-1.5 text-sm font-semibold text-white"
+          >
             Filter
           </button>
         </form>
       </div>
 
+      {/* Pipeline stats strip */}
+      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-stone-300 bg-white px-4 py-3 text-sm">
+        <span>
+          <span className="text-lg font-bold text-brand-dark">{all.length}</span>{" "}
+          <span className="text-stone-600">prospects</span>
+        </span>
+        <span className="text-stone-600">
+          Score:{" "}
+          <span className="font-semibold text-accent">{hotCount} Hot</span>
+          {" · "}
+          <span className="font-semibold text-amber-700">{warmCount} Warm</span>
+          {" · "}
+          <span className="font-semibold text-stone-500">{coldCount} Cold</span>
+          {" · "}
+          <span className="font-semibold">{unscoredCount} not scored</span>
+        </span>
+        <span className="text-stone-600">
+          Status:{" "}
+          {PROSPECT_STATUSES.map((s, i) => (
+            <span key={s}>
+              {i > 0 && " · "}
+              <span className="font-semibold">{statusCounts[s]}</span> {PROSPECT_STATUS_LABELS[s]}
+            </span>
+          ))}
+        </span>
+        <span className="text-stone-600">
+          <span className="font-semibold text-brand-dark">{draftsReady}</span>{" "}
+          drafts ready ·{" "}
+          <span className="font-semibold text-brand-dark">{followupsScheduled}</span>{" "}
+          follow-ups scheduled
+        </span>
+      </div>
+
+      {/* Batch run — one agent run per New prospect */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <BatchRunButton newCount={newCount} />
+        <p className="text-xs text-stone-500">
+          Runs the agent on every New prospect — one run each, skips any
+          already running.
+        </p>
+      </div>
+
       <AddProspectForm />
 
-      <div className="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {PROSPECT_STATUSES.map((status) => {
           const cards = prospects.filter((p) => p.status === status);
           return (
             <section
               key={status}
-              aria-label={`${PROSPECT_STATUS_LABELS[status]} prospects`}
-              className="rounded-xl bg-stone-800/[0.05] p-2"
+              className="rounded-lg border border-stone-300 bg-stone-100 p-2"
             >
-              <h2 className="mb-2 flex items-center justify-between px-1.5 pt-1 text-[13px] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <span
-                    aria-hidden="true"
-                    className={`h-2 w-2 rounded-full ${COLUMN_DOT[status]}`}
-                  />
-                  {PROSPECT_STATUS_LABELS[status]}
-                </span>
-                <span className="badge bg-white tabular-nums text-stone-600 shadow-sm">
+              <h2 className="mb-2 flex items-center justify-between px-1 pt-1 text-sm font-bold">
+                {PROSPECT_STATUS_LABELS[status]}
+                <span className="rounded-full bg-stone-300 px-2 py-0.5 text-xs">
                   {cards.length}
                 </span>
               </h2>
               <div className="space-y-2">
                 {cards.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-stone-300 px-2 py-4 text-center text-xs text-stone-400">
-                    Nothing here yet
+                  <p className="px-1 py-2 text-xs text-stone-500">
+                    No prospects here yet.
                   </p>
                 ) : (
                   cards.map((p) => (

@@ -349,6 +349,18 @@ export function listRunsForProspect(prospectId: number): Run[] {
   ).map(mapRun);
 }
 
+/** True when the prospect already has a queued or running run — the
+ *  batch route skips those so a prospect never gets two live runs. */
+export function hasActiveRun(prospectId: number): boolean {
+  const db = getDb();
+  const row = db
+    .prepare(
+      "SELECT COUNT(*) AS n FROM runs WHERE prospect_id = ? AND status IN ('queued', 'running')",
+    )
+    .get(prospectId) as { n: number };
+  return row.n > 0;
+}
+
 // ---- Drafts ----
 
 export function getDraft(id: number): Draft | null {
@@ -398,6 +410,14 @@ export function approveDraft(id: number): Draft | null {
   return db.prepare("SELECT * FROM drafts WHERE id = ?").get(id) as Draft;
 }
 
+/** Total drafts on file (board stats strip). */
+export function countDrafts(): number {
+  const db = getDb();
+  return (
+    db.prepare("SELECT COUNT(*) AS n FROM drafts").get() as { n: number }
+  ).n;
+}
+
 // ---- Follow-ups ----
 
 export function listFollowupsForProspect(prospectId: number): Followup[] {
@@ -426,6 +446,14 @@ export function createFollowup(input: {
     .get(Number(result.lastInsertRowid)) as Followup | undefined;
   if (!created) throw new Error("Failed to create follow-up");
   return created;
+}
+
+/** Total follow-ups scheduled (board stats strip). */
+export function countFollowups(): number {
+  const db = getDb();
+  return (
+    db.prepare("SELECT COUNT(*) AS n FROM followups").get() as { n: number }
+  ).n;
 }
 
 // ---- Settings (key/value) ----
