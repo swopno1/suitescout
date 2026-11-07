@@ -1,5 +1,5 @@
 // Vultr Serverless Inference client — OpenAI-compatible chat completions.
-// Base URL and model IDs per BUILD-SPEC.md §2. The API key lives in
+// Base URL and model IDs. The API key lives in
 // VULTR_INFERENCE_API_KEY (never in code, never in the repo).
 import { getSetting } from "./db";
 

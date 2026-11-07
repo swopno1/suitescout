@@ -1,4 +1,4 @@
-// SuiteScout agent loop — BUILD-SPEC.md §7.
+// SuiteScout agent loop.
 // Five steps: Research → Score → Draft → Log → Follow up. The run
 // trace IS the demo.
 //
@@ -407,7 +407,7 @@ export async function runAgent(runId: number): Promise<void> {
       evidence: research.sources,
       output: [
         `Follow-up draft #${followupDraft.id} ready — due in ${days} business day(s) (${dueDate}).`,
-        `Prospect flagged for human review; nothing sends itself.`,
+        `Follow-up draft ready for human review; outreach sends only from an approved draft.`,
       ].join("\n"),
     });
     await persist();

@@ -4,8 +4,10 @@
 //   auto   — fires at approval time, only when the kill switch is on
 //            AND the lead qualifies (hot, researched email,
 //            pre-contact) AND caps hold.
-// Nothing sends without a human-approved draft, ever: fully
-// autonomous sending would break the product's core promise.
+// Outreach sends only from a human-approved draft. The one exception
+// is the owner-only deliverability test email in Settings, which sends
+// with no draft at all. Fully autonomous sending would break the
+// product's core promise.
 // Reputation guards: verified-domain sending, rolling 24h cap,
 // one email per prospect, plain-text sends, reply-STOP footer.
 import { Resend } from "resend";
@@ -205,7 +207,7 @@ export async function sendTestEmail(toRaw: string): Promise<{ id: string }> {
     draft_id: null,
     channel: "test",
     to_email: to,
-    resend_id: null,
+    resend_id: data.id,
     auto: false,
     status: "sent",
   });

@@ -1,4 +1,4 @@
-// SuiteScout deterministic scoring — BUILD-SPEC.md §5.
+// SuiteScout deterministic scoring — the 0–100 rubric; worked examples live in scripts/scoring-test.ts.
 // The LLM explains; the rules score. This module is pure (no I/O, no
 // imports with runtime side effects) so the worked examples can be
 // regression-tested without a server or an API key.

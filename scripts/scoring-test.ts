@@ -1,4 +1,4 @@
-// SuiteScout scoring regression test — BUILD-SPEC.md §5 worked examples.
+// SuiteScout scoring regression test — the worked examples in lib/scoring.ts (Cox Beach 80, Sundori 70, Balishira 55, Giriraj 55) plus two edge cases.
 // Run: `node scripts/scoring-test.ts` (Node 24 runs .ts directly).
 // The agent must reproduce these four scores from the batch-3 facts.
 // Exit code 1 on any failure.

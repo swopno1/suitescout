@@ -1,4 +1,4 @@
-// SuiteScout shared types — mirrors BUILD-SPEC.md §4 (data model).
+// SuiteScout shared types — the data model (see SCHEMA_SQL in lib/db.ts).
 
 export type ProspectStatus =
   | "new"
@@ -28,7 +28,7 @@ export interface RunStep {
   note?: string | null;
 }
 
-/** Research fact sheet — BUILD-SPEC.md §6. Every fact cites a source URL. */
+/** Research fact sheet — every fact cites a source URL. */
 export interface ResearchData {
   has_website: boolean | "unknown";
   website_status: "live" | "dead" | "hijacked" | "none" | "unknown";
@@ -169,7 +169,7 @@ export interface ProspectStatusEvent {
   created_at: string;
 }
 
-/** The five agent-loop steps — BUILD-SPEC.md §7. */
+/** The five agent-loop steps: Research → Score → Draft → Log → Follow up. */
 export const AGENT_STEPS = [
   "Research",
   "Score",

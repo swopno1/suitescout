@@ -1,7 +1,6 @@
 # SuiteScout — single container. Node 20.
 # The database is the shared platform-postgres (Postgres 16) on the
-# vivescript-net network. All 4 runtime variables (DATABASE_URL,
-# APP_PASSWORD, VULTR_INFERENCE_API_KEY, VULTR_INFERENCE_MODEL) arrive
+# vivescript-net network. All runtime variables arrive
 # via the environment from docker-compose.yml (which reads .env) —
 # never baked into the image (.dockerignore excludes .env), and never
 # needed at build time: `next build` only imports modules, and every

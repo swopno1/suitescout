@@ -1,4 +1,4 @@
-// SuiteScout live research — BUILD-SPEC.md §6.
+// SuiteScout live research.
 // Fetches the prospect's website + its public research sources
 // (Facebook page + directory/listing URLs from the seed) and extracts
 // the fact sheet. Every fact cites a source URL; anything unverifiable
