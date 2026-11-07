@@ -705,11 +705,13 @@ export async function recordSend(input: {
   return mapSend(res.rows[0] as Record<string, unknown>);
 }
 
-/** Successful sends since an ISO instant — feeds the rolling cap. */
+/** Successful outreach sends since an ISO instant — feeds the
+ *  rolling cap. Test sends (channel=test) never consume budget. */
 export async function countSendsSince(sinceIso: string): Promise<number> {
   const pool = await db();
   const res = await pool.query(
-    "SELECT COUNT(*)::int AS n FROM sends WHERE status = 'sent' AND created_at > $1",
+    `SELECT COUNT(*)::int AS n FROM sends
+      WHERE status = 'sent' AND channel = 'email' AND created_at > $1`,
     [sinceIso],
   );
   return (res.rows[0] as { n: number }).n;

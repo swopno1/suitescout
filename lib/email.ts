@@ -64,16 +64,7 @@ function unsubscribeHeaders(): Record<string, string> {
 const STOP_FOOTER =
   "Don't want follow-ups? Just reply STOP and you won't hear from us again.";
 
-function textToHtml(text: string): string {
-  const esc = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return esc
-    .split(/\n{2,}/)
-    .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
-    .join("");
-}
+
 
 /** Send an approved email draft. Manual sends need a human click;
  *  auto sends additionally need qualification. Both need caps. */
@@ -131,12 +122,13 @@ export async function sendDraftEmail(
   const subject =
     draft.subject?.trim() || `A question about ${displayName(prospect)}`;
   const text = `${draft.body.trim()}\n\n---\n${STOP_FOOTER}`;
+  // Text-only: no HTML part at all. Reads human, dodges the promo
+  // tab, and keeps the smallest possible abuse surface.
   const { data, error } = await resend.emails.send({
     from: fromAddress(),
     to,
     subject,
     text,
-    html: textToHtml(text),
     headers: unsubscribeHeaders(),
     tags: [
       { name: "source", value: "suitescout" },
@@ -172,7 +164,7 @@ export async function sendDraftEmail(
 
 /** Owner-only deliverability check: one test email to a chosen
  *  address. Proves domain verification + key before real outreach.
- *  Exempt from the cap (still audited). */
+ *  Recorded as channel=test so it never consumes the outreach cap. */
 export async function sendTestEmail(toRaw: string): Promise<{ id: string }> {
   if (!isEmailConfigured()) {
     throw new Error("RESEND_API_KEY is not set — add it to .env.");
@@ -191,7 +183,6 @@ export async function sendTestEmail(toRaw: string): Promise<{ id: string }> {
     to,
     subject: "SuiteScout test email",
     text,
-    html: textToHtml(text),
     headers: unsubscribeHeaders(),
     tags: [{ name: "source", value: "suitescout-test" }],
   });
@@ -200,7 +191,7 @@ export async function sendTestEmail(toRaw: string): Promise<{ id: string }> {
     await recordSend({
       prospect_id: null,
       draft_id: null,
-      channel: "email",
+      channel: "test",
       to_email: to,
       resend_id: null,
       auto: false,
@@ -212,9 +203,9 @@ export async function sendTestEmail(toRaw: string): Promise<{ id: string }> {
   await recordSend({
     prospect_id: null,
     draft_id: null,
-    channel: "email",
+    channel: "test",
     to_email: to,
-    resend_id: data.id,
+    resend_id: null,
     auto: false,
     status: "sent",
   });

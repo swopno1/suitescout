@@ -33,7 +33,10 @@ parts:
 5. **Follow up** — drafts the follow-up (due in 3 business days) and
    flags the prospect for human review.
 
-**A human approves every send. The agent never sends.**
+**A human approves every send.** The agent drafts; sending only
+ever executes an approved draft — a manual Send click, or auto-send
+at approval time for qualified leads (hot band, researched email,
+pre-contact stage) when the kill switch is on.
 
 The problem it solves: resorts with no direct booking lose guests — and
 margin — to OTAs and third-party sellers. A 94-room resort running
@@ -49,9 +52,10 @@ Browser
 SuiteScout on a Vultr Cloud Compute VM (Docker)
   ├─ Next.js UI + API routes (one container)
   ├─ PostgreSQL 16 — shared platform-postgres on vivescript-net
-  │     (prospects, runs, drafts, follow-ups, settings)
-  └─ Vultr Serverless Inference (OpenAI-compatible)
-        https://api.vultrinference.com/v1
+  │     (prospects, runs, drafts, follow-ups, sends, settings)
+  ├─ Vultr Serverless Inference (OpenAI-compatible)
+  │     https://api.vultrinference.com/v1
+  └─ Resend — outbound email (manual Send + qualified auto-send)
   │  (live web fetch — research step)
   ▼
 Prospect resort's public website / Facebook / listings
@@ -81,14 +85,19 @@ of reasoning. Nothing in the loop runs anywhere else.
 - **Evidence receipts.** The run trace shows every step with its source
   URLs, so a human can verify each claim the agent makes.
 - **Human gate.** Drafts sit at `draft` until a human approves them
-  (`POST /api/drafts/:id/approve`). Nothing sends on its own.
+  (`POST /api/drafts/:id/approve`). Email sends only via an approved
+  draft — a manual Send click, or immediately at approval when the
+  lead qualifies and auto-send is enabled. Nothing else sends, ever.
 
-Screenshots: _from the live board — to be added._
+UI tour (live at the demo URL): branded `/login` → pipeline board
+with area scout + search → prospect detail (timeline, score, drafts,
+follow-ups, evaluate) → run view with live step trace → settings
+(AI connection, email sending, data overview).
 
 ## Run locally
 
 ```bash
-cp .env.example .env   # add VULTR_INFERENCE_API_KEY + DATABASE_URL (Postgres, required)
+cp .env.example .env   # fill in keys (see Environment below)
 pnpm install
 pnpm dev            # http://localhost:3000
 ```
@@ -101,7 +110,7 @@ Sundori Eco Resort, Balishira Resort — is flagged DEMO on the board.
 
 ```bash
 # On the VM (Ubuntu 24.04): install Docker + Compose, then:
-cp .env.example .env   # add VULTR_INFERENCE_API_KEY, APP_PASSWORD, DATABASE_URL
+cp .env.example .env   # add VULTR_INFERENCE_API_KEY, APP_PASSWORD, DATABASE_URL + Resend vars
 docker compose up -d --build
 # App on http://<vm-ip>:3000 (or https://suitescout.vivereply.com via Caddy).
 # Data lives in the shared platform-postgres — no local volume anymore.
@@ -183,10 +192,12 @@ has prospects is never re-seeded.
 
 ## Login
 
-The whole app (every page + every API route) sits behind HTTP Basic
-Auth — one shared login, username `demo`, password from `APP_PASSWORD`
-in `.env`. If `APP_PASSWORD` is unset or empty the app answers 401 to
-everything (fail closed, never open).
+The whole app (every page + every API route) sits behind a session
+login at `/login` — one shared login, username `demo`, password from
+`APP_PASSWORD` in `.env`. Sessions are HMAC-signed cookies (12h,
+HttpOnly, Secure in production) with a Log out button in the header.
+If `APP_PASSWORD` is unset or empty nobody can log in (fail closed,
+never open); rotating it logs everyone out at once.
 
 ```bash
 # On the VM, after editing .env (set APP_PASSWORD to a strong value):
@@ -204,7 +215,12 @@ the password from the submission). Never commit `.env`.
 | `VULTR_INFERENCE_API_KEY` | Vultr Serverless Inference API key (required for LLM calls). |
 | `VULTR_INFERENCE_MODEL` | Default model id (default `deepseek-v4.1-flash-1017`). |
 | `DATABASE_URL` | PostgreSQL connection string — REQUIRED, the app fails fast at startup without it. `postgresql://suitescout:<password>@platform-postgres:5432/suitescout`. |
-| `APP_PASSWORD` | Login password (Basic Auth, username `demo`). Unset/empty = the app answers 401 to everything. |
+| `APP_PASSWORD` | Login password (session login at `/login`, username `demo`). Unset/empty = nobody can log in. |
+| `RESEND_API_KEY` | Resend API key — unset = sending stays off, approve stays manual. |
+| `RESEND_FROM_EMAIL` | Sender address (default `amir@mail.vivereply.com` — verify the domain in Resend first). |
+| `RESEND_FROM_NAME` | Sender display name (default `Md Amir Hossain`). |
+| `AUTO_SEND_ENABLED` | `true` = approving a qualified email draft sends it immediately. Default `false`. |
+| `DAILY_SEND_CAP` | Rolling-24h send cap (default `10`, max `100`). |
 
 ## API
 
@@ -213,11 +229,19 @@ the password from the submission). Never commit `.env`.
 | `GET /api/prospects` (+ `?status=` `?band=`) | List prospects. |
 | `POST /api/prospects` | Add a prospect (`name`, `website`, `location`). |
 | `GET /api/board` | Kanban columns + counts. |
-| `POST /api/runs` | Queue a run for a prospect — runs the 5-step loop (research → score → draft → log → follow-up). |
+| `POST /api/runs` | Queue a run for a prospect — runs the 5-step loop (research → score → draft → log → follow-up). 409 when one is already active. |
+| `POST /api/runs/batch` | One run per New prospect (cap 25, skips active). |
 | `GET /api/runs/:id` | Run trace (steps + evidence + status). |
 | `PATCH /api/prospects/:id` | Update prospect status. |
-| `POST /api/drafts/:id/approve` | Human approval gate for a draft. |
+| `GET /api/prospects/:id/evaluate` | Rules verdict on the lead's position (+ LLM summary when keyed). |
+| `POST /api/scout` | Scout an area: place name → deduped OSM prospects. |
+| `POST /api/drafts/:id/approve` | Human approval gate for a draft (auto-sends when qualified + enabled). |
+| `POST /api/drafts/:id/send` | Manual Send of an approved email draft. |
+| `POST /api/drafts/:id/sent` | Record an approved draft as sent outside the app. |
 | `GET/POST /api/settings` | Inference model + follow-up delay. |
+| `POST /api/settings/test` | Live inference connection check. |
+| `POST /api/settings/test-email` | Deliverability test email (cap-exempt, audited). |
+| `POST /api/auth/login` / `POST /api/auth/logout` | Session login / logout. |
 
 ## What it becomes after the hackathon
 
@@ -236,4 +260,5 @@ and the rubric gets sharper with each real outcome.
   unknown.
 - **Human approves every send.**
 
-Full build spec: [`docs/BUILD-SPEC.md`](docs/BUILD-SPEC.md).
+Full build spec: `docs/BUILD-SPEC.md` — maintained as local working
+docs alongside the repo (not committed, so no link).
