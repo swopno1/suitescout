@@ -10,10 +10,12 @@ export const metadata = {
   title: "Log in",
 };
 
-/** Local paths only — never bounce to an external URL after login. */
+/** Local paths only — never bounce to an external URL after login,
+ *  and never back to /login itself (a logged-in self-bounce loops). */
 function safeNext(raw: string | undefined): string {
-  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
-  return "/";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  if (/^\/login([?#/]|$)/.test(raw)) return "/";
+  return raw;
 }
 
 export default async function LoginPage({

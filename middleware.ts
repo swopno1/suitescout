@@ -1,33 +1,50 @@
-// SuiteScout login wall — HMAC-signed session cookie (see lib/session.ts).
-// Protects every route except /login, the login API, and static assets.
-// Fail closed: no valid session → API callers get JSON 401, page visits
-// redirect to /login. Unset APP_PASSWORD means no session can ever
-// verify, so the app never serves unauthenticated.
+// SuiteScout login wall. Single enforcement point for every route.
+// The session check goes through /api/auth/verify (same container):
+// middleware env vars are BUILD-TIME in self-hosted Next.js, so the
+// middleware itself can never see the runtime APP_PASSWORD —
+// verifying here would bake in an empty secret and lock everyone
+// out (or worse, disagree with the login page and redirect-loop).
+// Fail closed: no cookie, invalid session, or unreachable verifier →
+// API callers get JSON 401, page visits redirect to /login.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySessionValue } from "@/lib/session";
+import { SESSION_COOKIE } from "@/lib/session";
+
+// Same container, always port 3000 (Dockerfile + compose agree).
+// Hardcoded deliberately — process.env here would be build-time.
+const VERIFY_URL = "http://127.0.0.1:3000/api/auth/verify";
 
 const PUBLIC = [
   /^\/login$/,
-  /^\/api\/auth\/login$/,
+  /^\/api\/auth\/(login|verify)$/,
   /^\/_next\//,
   /^\/brand\//,
   /^\/favicon\.ico$/,
 ];
 
+async function sessionValid(value: string | undefined): Promise<boolean> {
+  if (!value) return false;
+  try {
+    const res = await fetch(VERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { valid?: unknown };
+    return data.valid === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   if (PUBLIC.some((re) => re.test(pathname))) return NextResponse.next();
 
-  const secret = process.env.APP_PASSWORD;
   const session = request.cookies.get(SESSION_COOKIE)?.value;
-  if (
-    secret &&
-    session &&
-    (await verifySessionValue(secret, session))
-  ) {
-    return NextResponse.next();
-  }
+  if (await sessionValid(session)) return NextResponse.next();
+
   if (pathname.startsWith("/api/")) {
     return NextResponse.json(
       { error: "Authentication required." },
