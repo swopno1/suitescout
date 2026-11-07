@@ -7,9 +7,12 @@ import {
 } from "@/lib/types";
 import { matchesProspect } from "@/lib/board-search";
 import { domainOf } from "@/lib/prospect-label";
+import { contactCount } from "@/lib/research";
+import { listedContactCount } from "@/lib/geo";
 import AddProspectForm from "@/components/AddProspectForm";
 import BatchRunButton from "@/components/BatchRunButton";
 import BoardColumn from "@/components/BoardColumn";
+import ScoutAreaForm from "@/components/ScoutAreaForm";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +50,11 @@ function ProspectCard({ prospect }: { prospect: Prospect }) {
     prospect.location?.trim() ||
     (prospect.website?.trim() ? domainOf(prospect.website) : "") ||
     "No details yet";
+  const researched = prospect.fit_score !== null;
+  const missingContact =
+    researched &&
+    contactCount(prospect.research) === 0 &&
+    listedContactCount(prospect.contact) === 0;
   return (
     <article className="card card-hover !p-3">
       <div className="flex items-start justify-between gap-2">
@@ -63,6 +71,11 @@ function ProspectCard({ prospect }: { prospect: Prospect }) {
         )}
       </div>
       <p className="mt-0.5 truncate text-xs text-stone-500">{sub}</p>
+      {missingContact && (
+        <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+          No contact on file
+        </p>
+      )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <ScoreBadge prospect={prospect} />
         <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
@@ -213,6 +226,7 @@ export default async function BoardPage({
         )}
       </div>
 
+      <ScoutAreaForm />
       <AddProspectForm />
 
       <div className="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

@@ -393,18 +393,24 @@ export async function createProspect(input: {
   name: string;
   website?: string | null;
   location?: string | null;
+  /** Defaults to manual; area scouting passes osm. */
+  source?: string;
+  /** Listed-contact JSON (see lib/geo.serializeListedContact). */
+  contact?: string | null;
 }): Promise<Prospect> {
   const pool = await db();
   const now = new Date().toISOString();
   const res = await pool.query(
     `INSERT INTO prospects
       (name, website, location, source, contact, status, demo, created_at, updated_at)
-     VALUES ($1, $2, $3, 'manual', NULL, 'new', FALSE, $4, $5)
+     VALUES ($1, $2, $3, $4, $5, 'new', FALSE, $6, $7)
      RETURNING id`,
     [
       input.name.trim(),
       input.website?.trim() || null,
       input.location?.trim() || null,
+      input.source?.trim() || "manual",
+      input.contact ?? null,
       now,
       now,
     ],

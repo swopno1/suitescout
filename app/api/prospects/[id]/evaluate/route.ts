@@ -8,6 +8,8 @@ import {
 } from "@/lib/db";
 import { businessDaysOut } from "@/lib/agent";
 import { evaluateLead } from "@/lib/evaluate";
+import { contactCount } from "@/lib/research";
+import { listedContactCount } from "@/lib/geo";
 import { chatCompletion, isInferenceConfigured } from "@/lib/inference";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +69,9 @@ export async function GET(
       dueAt: businessDaysOut(f.due_after_days, Date.parse(f.created_at)),
       status: f.status,
     })),
+    contactCount:
+      contactCount(prospect.research) +
+      listedContactCount(prospect.contact),
   });
 
   let summary: string | null = null;

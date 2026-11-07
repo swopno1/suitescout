@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createProspect, listProspects } from "@/lib/db";
+import { normalizeWebsite } from "@/lib/normalize";
 import { hasAnyField, prospectLabel } from "@/lib/prospect-label";
 
 export const dynamic = "force-dynamic";
@@ -31,15 +32,18 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (cleaned.website && !/^https?:\/\//i.test(cleaned.website)) {
+  const website = cleaned.website
+    ? normalizeWebsite(cleaned.website)
+    : null;
+  if (cleaned.website && !website) {
     return NextResponse.json(
-      { error: "website must start with http:// or https://" },
+      { error: "website must be a plain http(s) URL without userinfo" },
       { status: 400 },
     );
   }
   const prospect = await createProspect({
-    name: prospectLabel(cleaned),
-    website: cleaned.website || null,
+    name: prospectLabel({ ...cleaned, website: website ?? cleaned.website }),
+    website,
     location: cleaned.location || null,
   });
   return NextResponse.json({ prospect }, { status: 201 });

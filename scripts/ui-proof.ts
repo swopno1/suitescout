@@ -11,6 +11,23 @@ import { evaluateLead, type LeadSnapshot } from "../lib/evaluate.ts";
 import { formatWhen, relativeAge } from "../lib/format.ts";
 import { ipv4Blocked, ipv6Blocked, safeHttpUrl } from "../lib/safe-url.ts";
 import {
+  dedupeCandidates,
+  isJunkCandidate,
+  listedContact,
+  listedContactCount,
+  normalizeCandidateName,
+  parseOverpass,
+  serializeListedContact,
+} from "../lib/geo.ts";
+import {
+  normalizeBdPhone,
+  normalizeEmail,
+  normalizeFacebookUrl,
+  normalizeSocialUrl,
+  normalizeWebsite,
+  normalizeWhatsapp,
+} from "../lib/normalize.ts";
+import {
   displayName,
   domainOf,
   hasAnyField,
@@ -186,6 +203,34 @@ check("evaluate: overdue follow-up demands sending", () => {
   assert.equal(e.verdict, "needs-nudge");
   assert.equal(e.suggested_action, "Send the follow-up now.");
 });
+check("evaluate: contactless researched lead needs a contact", () => {
+  const e = evaluateLead(
+    snap({
+      status: "researched",
+      fit_score: 80,
+      score_band: "hot",
+      runs: [{ status: "done", started_at: "2026-11-06T18:00:00Z", finished_at: "2026-11-06T18:05:00Z" }],
+      drafts: [{ channel: "email", status: "draft", created_at: "2026-11-06T18:00:00Z", approved_at: null, sent_at: null }],
+      contactCount: 0,
+    }),
+    NOW,
+  );
+  assert.equal(e.verdict, "needs-nudge");
+  assert.equal(e.suggested_action, "Re-run to capture contacts, or pull one from their Facebook page — then send.");
+  const withContact = evaluateLead(
+    snap({
+      status: "researched",
+      fit_score: 80,
+      score_band: "hot",
+      runs: [{ status: "done", started_at: "2026-11-06T18:00:00Z", finished_at: "2026-11-06T18:05:00Z" }],
+      drafts: [{ channel: "email", status: "draft", created_at: "2026-11-06T18:00:00Z", approved_at: null, sent_at: null }],
+      contactCount: 2,
+    }),
+    NOW,
+  );
+  assert.equal(withContact.verdict, "on-track");
+  assert.equal(withContact.suggested_action, "Review and approve a draft.");
+});
 check("evaluate: reply books the demo, closed rests", () => {
   const replied = evaluateLead(snap({ status: "replied" }), NOW);
   assert.equal(replied.verdict, "on-track");
@@ -219,6 +264,105 @@ check("links: only plain http(s) become anchors", () => {
   assert.equal(safeHttpUrl("ftp://example.com/x"), null);
   assert.equal(safeHttpUrl("https://user:pass@example.com/"), null);
   assert.equal(safeHttpUrl("not a url"), null);
+});
+
+// --- normalization ---
+check("normalize: emails canonical, junk rejected", () => {
+  assert.equal(normalizeEmail("  INFO@CoralBay.COM "), "info@coralbay.com");
+  assert.equal(normalizeEmail("mailto:a@b.com?subject=x"), "a@b.com");
+  assert.equal(normalizeEmail("logo@site.png"), null);
+  assert.equal(normalizeEmail("not-an-email"), null);
+});
+check("normalize: BD mobiles to +880, fragments rejected", () => {
+  assert.equal(normalizeBdPhone("01811-223344"), "+8801811223344");
+  assert.equal(normalizeBdPhone("(+880) 18-11-223344"), "+8801811223344");
+  assert.equal(normalizeBdPhone("+88 01766557760"), "+8801766557760");
+  assert.equal(normalizeBdPhone("008801766557760"), "+8801766557760");
+  assert.equal(normalizeBdPhone("01234"), null);
+  assert.equal(normalizeBdPhone("88029112233"), null);
+});
+check("normalize: whatsapp digits, facebook canonical", () => {
+  assert.equal(normalizeWhatsapp("+8801766557760"), "8801766557760");
+  assert.equal(normalizeWhatsapp("01766557760"), "8801766557760");
+  assert.equal(normalizeWhatsapp("abc"), null);
+  assert.equal(
+    normalizeFacebookUrl("https://m.facebook.com/CoralBay/?ref=x"),
+    "https://www.facebook.com/CoralBay",
+  );
+  assert.equal(
+    normalizeFacebookUrl("https://www.facebook.com/profile.php?id=12345&ref=ts"),
+    "https://www.facebook.com/profile.php?id=12345",
+  );
+  assert.equal(normalizeFacebookUrl("https://evil.com/x"), null);
+});
+check("normalize: social + website shapes", () => {
+  assert.equal(
+    normalizeSocialUrl("https://youtu.be/abc123?t=5"),
+    "https://youtu.be/abc123",
+  );
+  assert.equal(normalizeSocialUrl("/relative/path"), null);
+  assert.equal(normalizeSocialUrl("https://evil.com/?x=facebook.com"), null);
+  assert.equal(normalizeWebsite("https://Example.COM/"), "https://example.com");
+  assert.equal(normalizeWebsite("http://x.com:80/a"), "http://x.com/a");
+  assert.equal(normalizeWebsite("ftp://x"), null);
+  assert.equal(normalizeWebsite("notaurl"), null);
+});
+
+// --- area scouting ---
+check("scout: candidate names canonicalize for dedupe", () => {
+  assert.equal(normalizeCandidateName("Sea Pearl Resort & Spa"), "sea pearl");
+  assert.equal(normalizeCandidateName("The Hotel Sea Pearl"), "sea pearl");
+  assert.equal(normalizeCandidateName("Hotel Plaza"), "plaza");
+  assert.equal(normalizeCandidateName("Plaza Hotel"), "plaza");
+  assert.equal(normalizeCandidateName("Inn"), "inn");
+});
+check("scout: junk filtered, real stays kept", () => {
+  assert.equal(isJunkCandidate("Cox's Bazar Circuit House"), true);
+  assert.equal(isJunkCandidate("Dak Bungalow, Bandarban"), true);
+  assert.equal(isJunkCandidate("Rest Inn Hotel"), false);
+  assert.equal(isJunkCandidate("Hotel Hill View"), false);
+});
+check("scout: dedupe by name and website", () => {
+  const cands = [
+    { name: "Sea Pearl", lat: null, lon: null, website: null, phone: null, phone_raw: null, email: null },
+    { name: "Hotel Coastal Peace", lat: null, lon: null, website: "http://www.cotelcoastalpeace.com", phone: null, phone_raw: null, email: null },
+    { name: "Brand New Resort", lat: null, lon: null, website: null, phone: null, phone_raw: null, email: null },
+  ];
+  const { fresh, dupes } = dedupeCandidates(cands, [
+    { name: "Sea Pearl Resort & Spa", website: null },
+    { name: "Something Else", website: "http://www.cotelcoastalpeace.com/" },
+  ]);
+  assert.equal(fresh.length, 1);
+  assert.equal(fresh[0].name, "Brand New Resort");
+  assert.equal(dupes.length, 2);
+});
+check("scout: overpass parse merges split records, drops unnamed", () => {
+  const out = parseOverpass({
+    elements: [
+      { tags: { tourism: "hotel" } },
+      { lat: 1, lon: 2, tags: { name: "Sea Pearl", phone: "01766557760" } },
+      {
+        center: { lat: 1, lon: 2 },
+        tags: {
+          name: "Sea Pearl",
+          website: "https://seapearl.example.com/",
+          email: "INFO@seapearl.example.com",
+        },
+      },
+    ],
+  });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].website, "https://seapearl.example.com");
+  assert.equal(out[0].email, "info@seapearl.example.com");
+  assert.equal(out[0].phone, "+8801766557760");
+  assert.equal(out[0].phone_raw, null);
+});
+check("scout: listed contact round-trips, garbage is null", () => {
+  const s = serializeListedContact({ email: "a@b.com", phone: "+8801700000000" });
+  assert.deepEqual(listedContact(s), { email: "a@b.com", phone: "+8801700000000" });
+  assert.equal(listedContactCount(s), 2);
+  assert.equal(listedContact("garbage{"), null);
+  assert.equal(listedContactCount(null), 0);
 });
 
 // --- seed snapshot (no DB) ---

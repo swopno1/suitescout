@@ -10,6 +10,13 @@
 
 import { lookup } from "node:dns/promises";
 import type { Prospect, ResearchData } from "./types";
+import {
+  normalizeBdPhone,
+  normalizeEmail,
+  normalizeFacebookUrl,
+  normalizeSocialUrl,
+  normalizeWhatsapp,
+} from "./normalize";
 import { isGeneratedLabel } from "./prospect-label";
 import { ipv4Blocked, ipv6Blocked } from "./safe-url";
 
@@ -309,6 +316,72 @@ export interface ResearchOutcome {
   fetchLog: string[];
 }
 
+/** Contact values on file (0 for runs predating contacts capture). */
+export function contactCount(
+  research: ResearchData | null | undefined,
+): number {
+  const c = research?.contacts;
+  if (!c) return 0;
+  return c.emails.length + c.phones.length + c.whatsapp.length;
+}
+
+export interface ContactValues {
+  emails: string[];
+  phones: string[];
+  whatsapp: string[];
+}
+
+/** Pure contact parser — the exact step extractResearch runs on
+ *  fetched page text + hrefs. Exported so proofs exercise real code. */
+export function extractContacts(
+  allText: string,
+  allHrefs: string[],
+): ContactValues {
+  // Collapse spacing/dashes/parens between digits: "(+880) 18-11…"
+  // must read as one number. The strict shape check below keeps this
+  // from inventing numbers.
+  const digitsNorm = allText.replace(/(\d)[\s\-().]+(?=\d)/g, "$1");
+  // mailto: hrefs carry addresses whose anchor text may say "Email us".
+  const mailto = allHrefs
+    .filter((h) => h.toLowerCase().startsWith("mailto:"))
+    .map((h) => h.slice("mailto:".length));
+  const emails = [
+    ...new Set(
+      [
+        ...allText.matchAll(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi),
+      ]
+        .map((m) => m[0])
+        .concat(mailto)
+        .map((e) => normalizeEmail(e))
+        .filter((e): e is string => e !== null),
+    ),
+  ].slice(0, 5);
+  const phones = [
+    ...new Set(
+      [...digitsNorm.matchAll(/(\+?8801[3-9]\d{8}|01[3-9]\d{8})/g)]
+        .map((m) => normalizeBdPhone(m[1]))
+        .filter((p): p is string => p !== null),
+    ),
+  ].slice(0, 5);
+  // wa.me links live in hrefs as well as text — search both.
+  const waHay = `${allText}\n${allHrefs.join("\n")}`;
+  const whatsapp = [
+    ...new Set(
+      [
+        ...[...waHay.matchAll(/wa\.me\/(\d{7,15})/gi)].map((m) => m[1]),
+        ...[
+          ...waHay.matchAll(
+            /api\.whatsapp\.com\/send[^"'`\s]*[?&]phone=(\+?\d{7,15})/gi,
+          ),
+        ].map((m) => m[1]),
+      ]
+        .map((n) => normalizeWhatsapp(n))
+        .filter((n): n is string => n !== null),
+    ),
+  ].slice(0, 5);
+  return { emails, phones, whatsapp };
+}
+
 /** Live research for one prospect. Fetches the website (if any) plus
  *  the prospect's seeded public sources, then extracts §6 facts. */
 export async function extractResearch(
@@ -453,9 +526,10 @@ export async function extractResearch(
   )];
 
   // --- contact channels ---
-  // Phone numbers are often printed spaced out ("+88 0 17 6655 7760"),
-  // so collapse spaces/dashes between digits before matching.
-  const digitsNorm = allText.replace(/(\d)[\s-]+(?=\d)/g, "$1");
+  // Phone numbers are often printed spaced out ("+88 0 17 6655 7760",
+  // "(+880) 18-11-223344"), so collapse spacing/dashes/parens between
+  // digits before matching.
+  const digitsNorm = allText.replace(/(\d)[\s\-().]+(?=\d)/g, "$1");
   const channels = new Set<string>();
   if (
     /(\+?8801[3-9]\d{8}|01[3-9]\d{8})/.test(digitsNorm)
@@ -465,15 +539,23 @@ export async function extractResearch(
     channels.add("whatsapp");
   if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(allText))
     channels.add("email");
-  if (allHrefs.some((h) => h.toLowerCase().includes("facebook.com")))
+  if (
+    allHrefs.some((h) => normalizeFacebookUrl(h) !== null)
+  )
     channels.add("facebook");
 
-  // --- social links ---
-  const socialLinks = [...new Set(
-    allHrefs.filter((h) =>
-      /facebook\.com|instagram\.com|youtube\.com|linkedin\.com/i.test(h),
+  // --- contact values (the actual addresses/numbers, not just the
+  // channel names) — a lead is only actionable with at least one. ---
+  const { emails, phones, whatsapp } = extractContacts(allText, allHrefs);
+
+  // --- social links (canonicalized: tracker-free, one shape) ---
+  const socialLinks = [
+    ...new Set(
+      allHrefs
+        .map((h) => normalizeSocialUrl(h))
+        .filter((u): u is string => u !== null),
     ),
-  )].slice(0, 8);
+  ].slice(0, 8);
 
   // --- room count + types (scoped text only — see above) ---
   let roomCount: number | null = null;
@@ -532,6 +614,7 @@ export async function extractResearch(
     has_direct_booking: hasDirectBooking,
     ota_listings: otaListings,
     contact_channels: [...channels],
+    contacts: { emails, phones, whatsapp },
     languages,
     room_count: roomCount,
     room_types: roomTypes,

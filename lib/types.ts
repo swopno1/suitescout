@@ -36,6 +36,13 @@ export interface ResearchData {
   has_direct_booking: boolean | "unknown";
   ota_listings: string[];
   contact_channels: string[];
+  /** Actual contact values found on the public site (optional: runs
+   *  before this field existed stored none — a re-run captures them). */
+  contacts?: {
+    emails: string[];
+    phones: string[];
+    whatsapp: string[];
+  };
   languages: string[];
   room_count: number | null;
   room_types: string[];

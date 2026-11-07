@@ -23,6 +23,8 @@ export interface LeadSnapshot {
   }[];
   /** Computed due dates (ISO) for pending follow-ups. */
   followupDues: { dueAt: string; status: string }[];
+  /** Contact values on file (absent for runs predating capture). */
+  contactCount?: number;
 }
 
 export interface Evaluation {
@@ -111,6 +113,16 @@ export function evaluateLead(snap: LeadSnapshot, nowMs?: number): Evaluation {
     reasons.push(`${snap.drafts.length} draft(s) awaiting review.`);
     suggested_action = "Review and approve a draft.";
     if (ageDays > 2) escalate("needs-nudge");
+  }
+  if (
+    runsDone > 0 &&
+    (snap.contactCount ?? 1) === 0 &&
+    ["researched", "drafted"].includes(snap.status)
+  ) {
+    reasons.push("No email, phone, or WhatsApp on file to send to.");
+    suggested_action =
+      "Re-run to capture contacts, or pull one from their Facebook page — then send.";
+    escalate("needs-nudge");
   }
   if (overdue.length > 0) {
     reasons.push(`${overdue.length} follow-up(s) overdue.`);

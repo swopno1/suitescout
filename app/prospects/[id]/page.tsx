@@ -9,6 +9,7 @@ import {
 } from "@/lib/db";
 import { businessDaysOut } from "@/lib/agent";
 import { formatWhen } from "@/lib/format";
+import { listedContact, type ListedContact } from "@/lib/geo";
 import type {
   Draft,
   ProspectStatusEvent,
@@ -121,7 +122,13 @@ function LeadTimeline({ events }: { events: ProspectStatusEvent[] }) {
   );
 }
 
-function FactSheet({ research }: { research: ResearchData }) {
+function FactSheet({
+  research,
+  listed,
+}: {
+  research: ResearchData;
+  listed: ListedContact | null;
+}) {
   const rows: [string, string][] = [
     ["Website", String(research.has_website)],
     ["Website status", research.website_status],
@@ -148,12 +155,132 @@ function FactSheet({ research }: { research: ResearchData }) {
           </div>
         ))}
       </dl>
+      <ContactBlock research={research} listed={listed} />
       {research.social_links.length > 0 && (
         <LinkPills label="Social links" urls={research.social_links} />
       )}
       {research.sources.length > 0 && (
         <LinkPills label="Sources" urls={research.sources} />
       )}
+    </div>
+  );
+}
+
+function ContactBlock({
+  research,
+  listed,
+}: {
+  research: ResearchData;
+  listed: ListedContact | null;
+}) {
+  const c = research.contacts;
+  const n =
+    (c?.emails.length ?? 0) +
+    (c?.phones.length ?? 0) +
+    (c?.whatsapp.length ?? 0) +
+    (listed?.email ? 1 : 0) +
+    (listed?.phone ? 1 : 0) +
+    (listed?.phone_raw ? 1 : 0);
+  if (n === 0) {
+    return (
+      <p
+        role="alert"
+        className="mt-3 rounded-lg border border-amber-600/40 bg-amber-50 p-3 text-sm"
+      >
+        <strong>No contact on file.</strong> This run found no email,
+        phone, or WhatsApp number on the public site — re-run to
+        refresh, or pull one from their Facebook page before reaching
+        out.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-3">
+      <p className="label mb-1.5">
+        Contacts{" "}
+        <span className="tabular-nums">({n})</span>
+      </p>
+      <ul className="space-y-1.5 text-sm">
+        {(c?.emails ?? []).map((e) => (
+          <li key={e} className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              Email
+            </span>
+            <a
+              href={`mailto:${e}`}
+              className="break-all font-medium text-brand hover:underline"
+            >
+              {e}
+            </a>
+          </li>
+        ))}
+        {(c?.phones ?? []).map((p) => (
+          <li key={p} className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              Phone
+            </span>
+            <a
+              href={`tel:${p.replace(/\s/g, "")}`}
+              className="font-medium tabular-nums text-brand hover:underline"
+            >
+              {p}
+            </a>
+          </li>
+        ))}
+        {(c?.whatsapp ?? []).map((w) => (
+          <li key={w} className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              WhatsApp
+            </span>
+            <SafeLink
+              href={`https://wa.me/${w}`}
+              title={`Chat on WhatsApp: ${w}`}
+              className="font-medium tabular-nums text-brand hover:underline"
+            >
+              {w}
+            </SafeLink>
+          </li>
+        ))}
+        {listed?.email && (
+          <li className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              Email
+            </span>
+            <a
+              href={`mailto:${listed.email}`}
+              className="break-all font-medium text-brand hover:underline"
+            >
+              {listed.email}
+            </a>
+            <span className="text-xs text-stone-400">(listed)</span>
+          </li>
+        )}
+        {listed?.phone && (
+          <li className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              Phone
+            </span>
+            <a
+              href={`tel:${listed.phone.replace(/\s/g, "")}`}
+              className="font-medium tabular-nums text-brand hover:underline"
+            >
+              {listed.phone}
+            </a>
+            <span className="text-xs text-stone-400">(listed)</span>
+          </li>
+        )}
+        {listed?.phone_raw && (
+          <li className="flex flex-wrap gap-x-2">
+            <span className="w-16 shrink-0 font-semibold text-stone-500">
+              Phone
+            </span>
+            <span className="font-medium tabular-nums">{listed.phone_raw}</span>
+            <span className="text-xs text-stone-400">
+              (listed, unverified)
+            </span>
+          </li>
+        )}
+      </ul>
     </div>
   );
 }
@@ -296,7 +423,10 @@ export default async function ProspectDetailPage({
       <section className="card mb-4" aria-label="Research fact sheet">
         <h2 className="mb-3 text-lg font-bold">Research fact sheet</h2>
         {prospect.research ? (
-          <FactSheet research={prospect.research} />
+          <FactSheet
+            research={prospect.research}
+            listed={listedContact(prospect.contact)}
+          />
         ) : (
           <p className="text-sm text-stone-600">
             Not researched yet. Run the agent to fetch the live web
