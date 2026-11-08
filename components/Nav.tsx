@@ -9,23 +9,40 @@ import { useEffect, useState } from "react";
 import LogoutButton from "@/components/LogoutButton";
 
 const LINKS = [
-  { href: "/", label: "Board" },
+  { href: "/board", label: "Board" },
   { href: "/scout", label: "Scout" },
   { href: "/run", label: "Run" },
   { href: "/settings", label: "Settings" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  // Logged-out visitors only ever see /login — no nav, no logout.
+  // Logged-out visitors only ever see /login (no nav) — and the public
+  // landing page, which gets only a Log in link.
   useEffect(() => setOpen(false), [pathname]);
   if (pathname === "/login") return null;
+
+  // The landing page is public: no app links, no logout — just Log in.
+  if (pathname === "/") {
+    return (
+      <nav
+        aria-label="Primary"
+        className="flex items-center gap-1 text-sm font-semibold"
+      >
+        <Link
+          href="/login"
+          className="rounded-full bg-brand-dark px-3.5 py-1.5 text-cream transition-colors hover:bg-brand"
+        >
+          Log in
+        </Link>
+      </nav>
+    );
+  }
 
   return (
     <>

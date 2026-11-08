@@ -276,7 +276,7 @@ export default async function RunPage({
         {runs.length === 0 ? (
           <p className="text-sm text-stone-600">
             No runs yet. Start one above, or pick a prospect on the{" "}
-            <Link href="/" className="font-semibold text-brand hover:underline">
+            <Link href="/board" className="font-semibold text-brand hover:underline">
               board
             </Link>
             .

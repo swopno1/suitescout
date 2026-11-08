@@ -341,7 +341,7 @@ export default async function ProspectDetailPage({
     <div>
       <p className="mb-3 text-sm">
         <Link
-          href="/"
+          href="/board"
           className="font-semibold text-brand hover:underline"
         >
           ← Back to board

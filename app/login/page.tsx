@@ -13,8 +13,8 @@ export const metadata = {
 /** Local paths only — never bounce to an external URL after login,
  *  and never back to /login itself (a logged-in self-bounce loops). */
 function safeNext(raw: string | undefined): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
-  if (/^\/login([?#/]|$)/.test(raw)) return "/";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/board";
+  if (/^\/login([?#/]|$)/.test(raw)) return "/board";
   return raw;
 }
 
@@ -45,7 +45,7 @@ export default async function LoginPage({
               Suite<span className="text-accent">Scout</span>
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-              ViveReply sales-ops
+              ViveReply&apos;s Resort PMS sales-ops
             </p>
           </div>
         </div>

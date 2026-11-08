@@ -15,11 +15,13 @@ import { SESSION_COOKIE } from "@/lib/session";
 const VERIFY_URL = "http://127.0.0.1:3000/api/auth/verify";
 
 const PUBLIC = [
+  /^\/$/,
   /^\/login$/,
   /^\/api\/auth\/(login|verify)$/,
   /^\/_next\//,
   /^\/brand\//,
   /^\/favicon\.ico$/,
+  /^\/og-image\.png$/,
 ];
 
 async function sessionValid(value: string | undefined): Promise<boolean> {
