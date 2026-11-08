@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "SuiteScout — ViveReply's Resort PMS sales-ops",
+        alt: "SuiteScout — Resort PMS sales-ops",
       },
     ],
   },
@@ -114,7 +114,7 @@ export default function LandingPage() {
           Suite<span className="text-accent">Scout</span>
         </p>
         <p className="mt-2 text-[12px] font-bold uppercase tracking-[0.18em] text-stone-500">
-          ViveReply&apos;s Resort PMS sales-ops
+          Resort PMS sales-ops
         </p>
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-stone-700">
           SuiteScout finds resorts that need ViveReply&apos;s Resort PMS and

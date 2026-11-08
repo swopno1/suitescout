@@ -45,7 +45,7 @@ export default async function LoginPage({
               Suite<span className="text-accent">Scout</span>
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-              ViveReply&apos;s Resort PMS sales-ops
+              Resort PMS sales-ops
             </p>
           </div>
         </div>

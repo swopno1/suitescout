@@ -43,7 +43,7 @@ export default function RootLayout({
                   Suite<span className="text-accent">Scout</span>
                 </span>
                 <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-                  ViveReply&apos;s Resort PMS sales-ops
+                  Resort PMS sales-ops
                 </span>
               </span>
             </Link>
