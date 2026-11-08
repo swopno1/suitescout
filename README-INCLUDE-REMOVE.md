@@ -1,19 +1,26 @@
 # SuiteScout README — what to include, what to remove
 
-Source: the truth audit (Child 2) findings on tip `19e5248`. Every
-FALSE / EXAGGERATED / STALE claim is on the remove list unless it was
-corrected; every verified-TRUE claim and every required LabLab element
-is on the include list. The rewritten `README.md` in this folder
-follows the include list section-for-section, in this order.
+Source: the truth audit (Child 2) findings on tip `19e5248`,
+refreshed 2026-11-08 at tip `af8d121` (locked title/tagline, landing
+route `6528edd`, OG image). Every FALSE / EXAGGERATED / STALE claim
+is on the remove list unless it was corrected; every verified-TRUE
+claim and every required LabLab element is on the include list. The
+rewritten `README.md` in this folder follows the include list
+section-for-section, in this order.
 
 ## WHAT TO INCLUDE — final README sections, in order
 
-1. **Title + intro** — one paragraph: what SuiteScout is, who it sells
-   to (resorts), what it does (research → score → draft → log →
-   follow-up), human approves every outreach send.
+1. **Title + intro** — the locked submission title "SuiteScout —
+   ViveReply's Resort PMS sales agent" with the locked tagline
+   "Resort PMS sales-ops" as the subtitle line; then one
+   paragraph: what SuiteScout is, who it sells to (resorts), what it
+   does (research → score → draft → log → follow-up), human approves
+   every outreach send.
 2. **Live demo link + login pointer** — https://suitescout.vivereply.com
-   as a link; demo login is published in the LabLab submission
-   (username `demo`; password in the submission, never in the README).
+   as a link; the landing page is public at `/` ("Open live demo" →
+   `/login`, board at `/board` after login); demo login is published
+   in the LabLab submission (username `demo`; password in the
+   submission, never in the README).
 3. **Status note** — the five-step loop runs for real; the rubric
    reproduces the four worked examples (Cox Beach 80 Hot, Sundori 70
    Hot, Balishira 55 Warm, Giriraj 55 Warm); regression test
@@ -55,15 +62,17 @@ follows the include list section-for-section, in this order.
 8. **How the agent executes real tasks** — live fetch not canned data;
    deterministic scoring; evidence receipts in the run trace; human
    gate; sending limits (10/day rolling cap default, max 100;
-   one-email-per-approved-draft guard; `List-Unsubscribe` mailto
-   header; reply-STOP footer).
+   one-email-per-prospect guard — total, however triggered, it also
+   blocks follow-up emails; `List-Unsubscribe` mailto header;
+   reply-STOP footer).
 9. **Login** — session login at `/login`, username `demo`, password
    from `APP_PASSWORD`; HMAC cookie, 12h, HttpOnly, Secure in
    production; fail-closed; rotation logs everyone out; throttle 20
    failed attempts per IP per 10 min (429); middleware protects every
-   page + API except `/login`, `/api/auth/login|verify`, `/_next/`,
-   `/brand/`, `/favicon.ico`; `docker compose up -d` (not `restart`)
-   after editing `.env`.
+   page + API except `/` (public landing page), `/login`,
+   `/api/auth/login|verify`, `/_next/`, `/brand/`, `/favicon.ico`,
+   `/og-image.png`; login lands on the board at `/board`;
+   `docker compose up -d` (not `restart`) after editing `.env`.
 10. **Quick start (local)** — prerequisites with versions (Node 20 for
     the app, pnpm 12.16.1, PostgreSQL 16, Node ≥22.6 only for the
     scoring-test script); a local Postgres alternative (Docker
@@ -102,17 +111,23 @@ follows the include list section-for-section, in this order.
     a public session check) and `POST /api/prospects` (any of name /
     website / location, at least one required).
 15. **UI tour + Screenshots** — live demo URL as a link; the tour path
-    (login → board with area scout + search → prospect detail →
-    run view with live step trace → settings); five screenshots as
-    explicitly marked founder placeholders
-    (`screenshots/01-login.png` … `05-settings.png`, at the repo root
-    — never under `docs/`, which is gitignored). No fake screenshots.
+    (landing page at `/` → "Open live demo" → login → board at
+    `/board` with area scout + search → prospect detail → run view
+    with live step trace → settings); five screenshots as explicitly
+    marked founder placeholders (`screenshots/01-login.png` …
+    `05-settings.png`, at the repo root — never under `docs/`, which
+    is gitignored). No fake screenshots. Plus the feature image:
+    `public/og-image.png` (1200×630) with its honest status (correct
+    image in the repo as `public/suitescout-og-image.png`; rename +
+    rebuild pending).
 16. **Current limitations** — stated honestly, never as done features:
     no scheduled sending; no follow-up mark-done; no suppression list
     / bounce-complaint webhook and the STOP footer has no mechanism
-    behind it; no `/api/health` (compose healthcheck probes `/`); no
-    non-root `USER` in the Dockerfile (compose mitigations listed);
-    test-email success path records `resend_id` null (one-line fix).
+    behind it; no `/api/health` (compose healthcheck probes `/`,
+    which now serves the public landing page, 200 — still no
+    dedicated health route); no non-root `USER` in the Dockerfile
+    (compose mitigations listed). (The old "test-email success path
+    records `resend_id` null" bullet was removed: fixed by `c17ede9`.)
 17. **What it becomes after the hackathon** — the same loop runs the
     live prospect pipeline; rubric sharpens with real outcomes.
 18. **Rules this repo lives by** — no *Suite* prices anywhere; no
@@ -225,6 +240,18 @@ follows the include list section-for-section, in this order.
   location)".** The route requires at least one of the three.
   *Corrected to "Add a prospect (any of name, website, location; at
   least one)."*
+- **S10 — Title "SuiteScout — the resort sales-ops agent" (old
+  README:1).** Ambiguous — reads as sales-ops FOR a resort, while
+  the product sells the Resort PMS to resorts. *Replaced by the
+  locked submission title "SuiteScout — ViveReply's Resort PMS sales
+  agent" + the locked tagline "Resort PMS sales-ops".*
+- **S11 — "The whole app (every page + every API route) sits behind
+  a session login".** Since `6528edd` the landing page `/` and
+  `/og-image.png` are public. *Corrected to list the public
+  exceptions and the post-login landing on `/board`.*
+- **S12 — UI tour "Live at … (log in first): /login → board".** The
+  board moved to `/board` and the landing page comes first.
+  *Corrected to landing → login → board at `/board`.*
 
 ### UNVERIFIED — remove, do not assert as fact
 
@@ -313,3 +340,32 @@ the audit accurate, plus the following:
 - **Battery re-run at the new tip:** `tsc` clean, `pnpm build`
   green, scoring 6/6, ui-proof 35/35 pure — the first validation of
   the `c17ede9` lib changes.
+
+## REFRESH ADDENDUM (tip `af8d121`, 2026-11-08)
+
+- **Locked title + tagline.** Submission title is now "SuiteScout —
+  ViveReply's Resort PMS sales agent" (47 chars) with the locked
+  tagline "Resort PMS sales-ops" (founder, 2026-11-08).
+  The old title is on the remove list as S10; it appears nowhere in
+  the refreshed README.
+- **Landing route (`6528edd`).** `/` is the public landing page,
+  `/board` is the board, login lands on `/board`. Include items 2,
+  9, 15 and remove items S11, S12 updated accordingly. Verified
+  live 2026-11-08 ~12:31.
+- **OG image.** The correct 1200×630 image is in the repo as
+  `public/suitescout-og-image.png` (verified by blob SHA — the
+  498×261 preview uploaded earlier was replaced by the founder in
+  `af8d121`); it still needs a rename to `public/og-image.png` +
+  a rebuild before the metadata path resolves. The README states
+  this status honestly; nothing in the docs claims the image is
+  already serving.
+- **Include-list corrections.** Item 8: "one-email-per-approved-
+  draft" was the struck F6 claim — corrected to one-email-per-
+  prospect (total). Item 16: the `resend_id` bullet was already
+  fixed by `c17ede9` and is removed here; the `/api/health` bullet
+  updated for the public landing page.
+- **Docs synced.** `SUBMISSION-CHECKLIST.md` and
+  `FIXES-FOR-FOUNDER.md` re-synced to this tip (landing route,
+  inference-comment fix, OG-image rename step, LabLab Step 1
+  status).
+

@@ -3,6 +3,8 @@
 Small code / copy fixes found by the truth audit, the UI audit, and
 the re-inspection pass. Status is tracked inline: DONE items are in
 `main`, PARKED items wait until after judging. No secrets here.
+Current tip: `af8d121` (2026-11-08) — items 11–12 landed since the
+last sync.
 
 ## Done before submitting (in `main`)
 
@@ -24,9 +26,10 @@ the re-inspection pass. Status is tracked inline: DONE items are in
    variables"; compose passes nine (plus compose-only `TZ`). Now
    reads "All runtime variables arrive via the environment from
    docker-compose.yml" (landed `c17ede9`).
-6. ✅ **Code comments citing `docs/BUILD-SPEC.md` (seven sites).**
+6. ✅ **Code comments citing `docs/BUILD-SPEC.md` (eight sites).**
    `docs/*` is gitignored, so the citations were dead. Re-pointed at
-   `lib/scoring.ts` / `scripts/scoring-test.ts` (landed `c17ede9`).
+   `lib/scoring.ts` / `scripts/scoring-test.ts` (landed `c17ede9`;
+   zero citations remain in code at `af8d121`, verified by grep).
 7. ✅ **Login page copy** (`app/login/page.tsx`). Said "Owner access
    only — this tool runs one pipeline, yours." — the first screen a
    judge sees, reading as "go away" and explaining nothing. Now
@@ -45,48 +48,67 @@ the re-inspection pass. Status is tracked inline: DONE items are in
 10. ✅ **`backups/` gitignored.** Nightly DB dumps on the VM can no
     longer be committed by accident (re-inspection pass).
 
+11. ✅ **Inference comments fixed** (`lib/inference.ts`,
+    landed `65a4f86`). The KNOWN_MODELS comment no longer implies a
+    separate scoring model ("The scoring model is the cheap
+    classifier"); it now states only one model is used at a time,
+    scoring is deterministic code, and the model writes only the
+    reason prose. The stale "Friday's executor uses this" reference
+    is gone too. Verified in code at `af8d121`.
+12. ✅ **Public landing page at `/`, board at `/board`** (landed
+    `6528edd`, 8 files). New public landing page at `/` (brand,
+    locked tagline, judges band, five-step loop, rubric, guardrails,
+    Vultr stack, 7 explore links, no demo password); board moved
+    verbatim to `/board`; middleware PUBLIC gained `/` +
+    `/og-image.png`; Nav Board→`/board`, Log in only on `/`; login
+    lands on `/board`; layout metadata + corrected title. Verified
+    live 2026-11-08 ~12:31 (`/` 200 public, `/board` logged-out
+    307).
+
 ## Parked until after judging (do not claim as done)
 
 Copy fixes (UI strings):
 
-11. **Approve button — no warning, no feedback.** Approving can send
+13. **Approve button — no warning, no feedback.** Approving can send
     immediately when auto-send is on and the lead qualifies, but the
     button warns of nothing and drops the API's auto-send result.
     Add a confirmation/warning on Approve when auto-send is enabled,
     and show the result ("sent" / "queued") after the click.
-12. **"Demo" badge — unexplained.** It means "seeded demo prospect
+14. **"Demo" badge — unexplained.** It means "seeded demo prospect
     used in the walkthrough video" (`lib/seed.ts`). Add that as a
     tooltip/label wherever the badge renders.
-13. **Fact sheet — raw booleans.** `true`/`false` render literally.
+15. **Fact sheet — raw booleans.** `true`/`false` render literally.
     Render Yes/No.
-14. **"In talks" board grouping — unlabeled.** It is Contacted +
+16. **"In talks" board grouping — unlabeled.** It is Contacted +
     Replied. Label it as such.
-15. **Settings "X sent in last 24h" — unexplained.** The count is
+17. **Settings "X sent in last 24h" — unexplained.** The count is
     outreach emails only (`status = 'sent' AND channel = 'email'`);
     there is no send log behind it. Label the count honestly.
-16. **Empty board — no first step.** An unscored board shows 20
+18. **Empty board — no first step.** An unscored board shows 20
     prospects and no guidance. Add one line: run a prospect (or
     "Run all New") to score it.
 
 Missing features (decide; do not claim as done):
 
-17. **STOP footer promise has no mechanism.** Outgoing mail promises
+19. **STOP footer promise has no mechanism.** Outgoing mail promises
     "Just reply STOP and you won't hear from us again", but no inbox
     is processed and no suppression table exists — a STOP reply
     currently does nothing. Either build suppression (inbox
     processing + suppression table + check before sending) or change
     the footer copy. Do not keep promising what does not exist.
-18. **Follow-ups are a dead end.** No draft link/action from a
+20. **Follow-ups are a dead end.** No draft link/action from a
     follow-up, no mark-done — and the one-email-per-prospect guard
     blocks follow-up emails entirely until it learns a follow-up
     exception. Add the link + mark-done + the exception, or keep the
     README's honest "Current limitations" wording.
-19. **No `/api/health`.** The compose healthcheck probes `/` and
-    treats the redirect to `/login` as alive. Add a real health
-    endpoint if a judge is expected to probe one.
-20. **No non-root `USER` in the Dockerfile.** Compose mitigates with
+21. **No `/api/health`.** The compose healthcheck probes `/`,
+    which now serves the public landing page (200) — it confirms the
+    app serves, but there is still no dedicated health route. Add a
+    real health endpoint if a judge is expected to probe one.
+22. **No non-root `USER` in the Dockerfile.** Compose mitigates with
     `cap_drop: ALL`, `no-new-privileges`, memory/pids limits; a
     `USER` line would close it properly.
-21. **No scheduled sending.** Follow-up "due" is only a date string;
+23. **No scheduled sending.** Follow-up "due" is only a date string;
     nothing ever fires follow-ups. Out of scope for this submission
     unless the founder explicitly wants it built.
+

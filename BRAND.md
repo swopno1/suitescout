@@ -49,6 +49,36 @@ Wordmark: system sans, weight 800, tracking tight — "Suite" in ink,
 "Scout" in terracotta. Never set the wordmark in another face without
 updating the lockup file to match.
 
+## Tagline (locked)
+
+**"Resort PMS sales-ops"** — locked 2026-11-08 by the
+founder. It sits under the wordmark on the logo lockup, the OG image,
+the public landing page, and the pitch deck. It is the one-line answer
+to "what is SuiteScout for": ViveReply sells the Resort PMS;
+SuiteScout is the sales-ops that finds the resorts that need it. Never
+shorten it to "ViveReply sales-ops" (drops the product) or "Resort
+sales-ops agent" (reads as sales-ops for a resort, not for selling
+the PMS).
+
+## Feature image
+
+`public/og-image.png` (1200×630) — the landing page's OG/Twitter
+image, the LabLab cover, and the YouTube thumbnail. Pine background,
+reversed Scout Lens mark, wordmark (Suite cream / Scout terracotta),
+the locked tagline, four features at a glance, footer strip "Vultr
+Agent Rush · Track 02 — Powering the Future of Work". Status: the file in the repo as `public/suitescout-og-image.png` is
+a 498×261 WebP preview, not the correct image — delete it and upload
+the correct 1200×630 PNG as `public/og-image.png`, then rebuild,
+before it serves at `/og-image.png`.
+
+## Public home
+
+The brand's public home is the landing page at
+https://suitescout.vivereply.com — the first screen a judge sees.
+It carries the mark, the wordmark, the locked tagline, the
+seller → product → prospect strip, and the "For judges — start
+here" band. The prospect board lives behind the login at `/board`.
+
 ## Rules
 
 - Clear space: half the badge width on all sides. Minimum digital
@@ -63,3 +93,10 @@ updating the lockup file to match.
 - 2026-11-06: Brand locked (v1) — Scout Lens mark, palette, favicon
   set, horizontal lockup. Designed for the Vultr Agent Rush demo;
   built to outlive it.
+- 2026-11-08: Tagline locked — "ViveReply's Resort PMS sales-ops";
+  changed the same day to "Resort PMS sales-ops" (founder verdict:
+  shorter reads punchier; the wordmark and the submission title
+  already carry the ViveReply name).
+  OG image asset added (1200×630, `public/og-image.png`). Public
+  landing page live at suitescout.vivereply.com (board at `/board`).
+

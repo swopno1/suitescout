@@ -1,4 +1,6 @@
-# SuiteScout — the resort sales-ops agent
+# SuiteScout — ViveReply's Resort PMS sales agent
+
+*Resort PMS sales-ops.*
 
 ViveReply sells its Suite (Resort PMS + direct-booking website) **to
 resorts**. Finding those resorts, checking whether they need the Suite,
@@ -8,9 +10,13 @@ prospect resort, scores it against a fixed rubric, drafts the first
 message, logs everything on a board, and drafts the follow-up. A human
 approves every outreach send.
 
-Live demo: **https://suitescout.vivereply.com** — log in with the demo
-login published in the LabLab submission (username `demo`; the password
-is in the submission, not in this repo). See [Login](#login).
+Live demo: **https://suitescout.vivereply.com** — the public landing
+page tells the story (ViveReply sells the Resort PMS; SuiteScout finds
+the resorts that need it). Open the live demo from the landing page and
+log in with the demo login published in the LabLab submission
+(username `demo`; the password is in the submission, not in this repo).
+The prospect board lives at `/board` after login. See
+[Login](#login).
 
 > **Status.** The five-step loop runs for real — live fetch +
 > extraction, deterministic rubric scoring, LLM drafting (template
@@ -154,18 +160,21 @@ the only legs that leave the VM.
 
 ## Login
 
-The whole app (every page + every API route) sits behind a session
-login at `/login` — one shared login, username `demo`, password from
-`APP_PASSWORD` in `.env`. Sessions are HMAC-signed cookies (12h,
+Every page and API route sits behind a session login at `/login` —
+one shared login, username `demo`, password from `APP_PASSWORD` in
+`.env` — except the public landing page at `/` and its OG image
+(`/og-image.png`). Sessions are HMAC-signed cookies (12h,
 HttpOnly, Secure in production) with a Log out button in the header.
 If `APP_PASSWORD` is unset or empty nobody can log in (fail closed,
 never open); rotating it logs everyone out at once. Login attempts are
 throttled: 20 failed attempts per IP per 10 minutes, then HTTP 429.
 
-Middleware protects every page and API route except `/login`,
-`/api/auth/login`, `/api/auth/verify`, `/_next/`, `/brand/` and
-`/favicon.ico`. Unauthenticated page visits redirect to `/login`;
-unauthenticated API calls get JSON 401.
+Middleware protects every page and API route except `/`, `/login`,
+`/api/auth/login`, `/api/auth/verify`, `/_next/`, `/brand/`,
+`/favicon.ico` and `/og-image.png`. Unauthenticated visits to a
+protected page redirect to `/login` (with `?next=` back to that page —
+after login you land on the board at `/board`); unauthenticated API
+calls get JSON 401.
 
 ```bash
 # On the VM, after editing .env (set APP_PASSWORD to a strong value):
@@ -370,10 +379,11 @@ All routes except the login/verify pair require a valid session (see
 
 ## UI tour
 
-Live at https://suitescout.vivereply.com (log in first): branded
-`/login` → pipeline board with area scout + search → prospect detail
-(timeline, score, drafts, follow-ups, evaluate) → run view with live
-step trace → settings (AI connection, email sending, data overview).
+Live at https://suitescout.vivereply.com: the public landing page at
+`/` → "Open live demo" → branded `/login` → pipeline board at
+`/board` with area scout + search → prospect detail (timeline, score,
+drafts, follow-ups, evaluate) → run view with live step trace →
+settings (AI connection, email sending, data overview).
 
 ### Screenshots
 
@@ -393,6 +403,17 @@ step trace → settings (AI connection, email sending, data overview).
 - Run view, live step trace — `screenshots/04-run-trace.png` *(placeholder — founder to add)*
 - Settings — `screenshots/05-settings.png` *(placeholder — founder to add)*
 
+### Feature image (OG image)
+
+The landing page's feature image is `public/og-image.png` (1200×630,
+brand-exact — the same file used as the LabLab cover and the YouTube
+thumbnail). Status at this writing: the file in the repo as
+`public/suitescout-og-image.png` is NOT the correct image — it is a
+498×261 WebP preview (verified by download). Delete it and upload the
+correct 1200×630 PNG as `public/og-image.png`, then rebuild, before
+the metadata path (`/og-image.png`) resolves — until then that path
+404s.
+
 ## Current limitations
 
 Stated plainly, because a judge will find them anyway:
@@ -409,9 +430,9 @@ Stated plainly, because a judge will find them anyway:
   mechanism behind it: no inbox is processed and no suppression table
   exists, so a STOP reply currently does nothing. The one-email-per-
   approved-draft guard is real, but it is not a suppression list.
-- **No `/api/health` endpoint.** The compose healthcheck probes `/`
-  and treats the redirect to `/login` as alive; there is no dedicated
-  health route.
+- **No `/api/health` endpoint.** The compose healthcheck probes `/`,
+  which now serves the public landing page (200) — it confirms the
+  app serves, but there is still no dedicated health route.
 - **No non-root user in the container.** The Dockerfile runs as root;
   the compose file mitigates with `cap_drop: ALL`,
   `no-new-privileges: true`, `mem_limit: 1G` and `pids_limit: 128`.
@@ -444,3 +465,4 @@ and the rubric gets sharper with each real outcome.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
