@@ -1,10 +1,11 @@
 # Fixes for the founder — SuiteScout
 
 Small code / copy fixes found by the truth audit, the UI audit, and
-the re-inspection pass. Status is tracked inline: DONE items are in
-`main`, PARKED items wait until after judging. No secrets here.
-Current tip: `538462b` (2026-11-08 ~15:00) — items 24–27 landed since the
-last sync (tagline, docs refresh, video, deck screenshots).
+the re-inspection pass, and the post-submission inspection. Status
+is tracked inline: DONE items are in `main`, PARKED items wait until
+after judging. No secrets here. Submitted 2026-11-08 (tip
+`9ab13da`); the post-submission batch below is committed on top and
+needs one VM rebuild to go live (founder's call during judging).
 
 ## Done before submitting (in `main`)
 
@@ -104,10 +105,42 @@ last sync (tagline, docs refresh, video, deck screenshots).
   captioning:** the viewport file sent as `01-login.png` is a
   second copy of the landing page, not the login form — the real
   login capture is the full-page `01-login_full.png`, which must
-  replace it as `public/screenshots/01-login.png` (checklist
-  item 1). The other four match their names (board at 29
-  prospects; Balishira 55 Warm; Sreemangal Run #37, 30 Cold;
-  Settings).
+  replace it as `public/screenshots/01-login.png`. **Still pending
+  post-submission** (verified by opening the file — it shows the
+  landing hero, not the form). Founder action: capture `/login`,
+  replace the file, re-render deck slide 4. The other four match
+  their names (board at 29 prospects; Balishira 55 Warm; Sreemangal
+  Run #37, 30 Cold; Settings).
+
+## Done in the post-submission inspection batch
+
+All static strings, battery green (`tsc`, build, scoring 6/6,
+ui-proof 35/35). The `app/page.tsx` items need one VM rebuild to go
+live; the rest (rename, doc wording) take effect on github.com at
+push time.
+
+25. ✅ **Landing rubric "Modern PMS already in place" → "Booking
+    engine already in place".** The −30 fires on
+    `has_booking_engine`; the old label reintroduced struck claim
+    S6 (README-INCLUDE-REMOVE.md).
+26. ✅ **Landing guardrail "the agent never sends on its own" →**
+    "nothing sends from an unapproved draft. The only send without
+    a draft is the owner-only deliverability test in Settings."
+    (Third purge of the "never sends" wording; auto-send fires at
+    approval.)
+27. ✅ **Landing follow-up card "it never sends itself" →** "no
+    scheduled sending — the follow-up waits for a human."
+28. ✅ **Landing scout destinations → verified-only examples**
+    (Saint Martin's Island, Sreemangal). `Cox's Bazar` was listed
+    but the scout refuses it — falsifiable by a judge in 30
+    seconds.
+29. ✅ **Landing "with a verified test restore" dropped.** No
+    restore test is on record (backups run; restore untested). If
+    the founder has test-restored, say so and re-add it.
+30. ✅ **`05-settigns.png` → `05-settings.png`** (+ README
+    reference). Typo filename a judge would spot.
+31. ✅ **README + BRAND.md OG paragraphs** — "until the rebuild,
+    404s" → serves live (verified 200, 87,690 bytes).
 
 ## Parked until after judging (do not claim as done)
 
@@ -155,10 +188,13 @@ Missing features (decide; do not claim as done):
 23. **No scheduled sending.** Follow-up "due" is only a date string;
     nothing ever fires follow-ups. Out of scope for this submission
     unless the founder explicitly wants it built.
-24. **Settings daily-cap copy is stale.** The auto-send explainer
-    says "never more than 20 emails per 24 hours", but the enforced
-    cap is 10/day (`DAILY_SEND_CAP` default 10, `lib/email.ts`) —
-    and the landing page itself says "10-sends-per-day cap". A judge
-    comparing the two screens catches the contradiction. One-line
-    copy fix: make the Settings string say 10. Do not quote the
-    stale number in the README or the submission.
+24. ✅ **Closed as a false alarm — with the real fix elsewhere.**
+    The Settings string was never hardcoded: it renders
+    `{dailySendCap()}` (live env value) and has since `ce2e988`.
+    The VM runs `DAILY_SEND_CAP=20`, so Settings truthfully shows
+    20 — the stale party was the *landing page's* hardcoded
+    "10-sends-per-day cap". Fixed by depinning the landing ("daily
+    send cap (Settings shows the live value)") in the
+    post-submission batch. Standing rule: 10 is the code default,
+    20 is the live VM value — never quote either without saying
+    which.

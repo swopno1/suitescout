@@ -125,8 +125,9 @@ section-for-section, in this order.
     (landing page at `/` → "Open live demo" → login → board at
     `/board` with area scout + search → prospect detail → run view
     with live step trace → settings); five screenshots as **real
-    embeds** (`public/screenshots/01-login.png` … `05-settigns.png`, at the
-    repo root — never under `docs/`, which is gitignored), each with
+    embeds** (`public/screenshots/01-login.png` … `05-settings.png`
+    (renamed post-submission from `05-settigns.png`), at the repo
+    root — never under `docs/`, which is gitignored), each with
     a one-line caption stating what it shows: login form; board at
     29 prospects; Balishira 55 Warm live; Run #37 Sreemangal 30
     Cold (named as Sreemangal's run, never Balishira's); Settings.
@@ -468,3 +469,53 @@ the selectable-models list now names GLM + MiMo alongside Qwen).
   10/day cap; never quoted in the README or the submission. The
   Settings screenshot shows it in passing; its caption does not draw
   attention to it. Parked as a one-line copy fix after judging.
+
+## POST-SUBMISSION ADDENDUM (filed 2026-11-08, tip `9ab13da`)
+
+Submitted with the video (2:27, https://youtu.be/4V5lu60qQC8), five
+screenshots, OG cover, pitch deck, and demo login. The
+post-submission inspection (landing page read end-to-end, all 7
+explore links fetched live, both questioned screenshots opened)
+found the filing accurate except the following, all fixed in `main`
+on top of the submission tip (landing-copy items need one VM
+rebuild to go live):
+
+- **F7 — Landing rubric "Modern PMS already in place" (−30).**
+  The code fires on `has_booking_engine` — a reintroduction of
+  struck claim S6. *Corrected to "Booking engine already in
+  place".*
+- **F8 — Landing "the agent never sends on its own" (+ "it never
+  sends itself" on the follow-up card).** Third resurrection of the
+  purged "never sends" wording; auto-send fires at approval.
+  *Reworded to the README standard: nothing sends from an
+  unapproved draft + the owner-only test-email exception stated;
+  follow-up card now says "no scheduled sending".*
+- **F9 — Landing scout list named Cox's Bazar.** The scout refuses
+  it (Nominatim returns only the district) — falsifiable live in 30
+  seconds. *Reduced to verified-with-data examples (Saint Martin's
+  Island, Sreemangal).*
+- **F10 — Landing "Nightly database backups, with a verified test
+  restore".** Backups run; no restore test is on record.
+  *Dropped to "Nightly database backups" pending founder
+  confirmation of a restore test.*
+- **F11 — Landing "10-sends-per-day cap" vs live Settings showing
+  20.** The VM runs `DAILY_SEND_CAP=20` and Settings renders the
+  live value — the landing's pinned 10 contradicted it (this also
+  closes S16/FIXES-#24 as a false alarm: the Settings string was
+  never hardcoded). *Landing depinned to "daily send cap (Settings
+  shows the live value)". Standing rule: 10 is the code default, 20
+  is the live VM value — never quote either without saying which.*
+- **Stale "until the rebuild, 404s" (README + BRAND.md).**
+  `/og-image.png` verified 200 (87,690 bytes) post-submission.
+  *Both paragraphs now state it serves live.*
+- **`05-settigns.png` typo renamed** to `05-settings.png` (+ README
+  reference). No live references remain anywhere — only
+  renamed-from notes in the docs' history sections.
+- **Still open (founder-owned):** `01-login.png` is a landing
+  duplicate, not the login form (verified by opening the file) —
+  the planned swap never happened. The README caption describes
+  the login form. Fix: capture `/login`, replace the file,
+  re-render deck slide 4.
+- **Verified clean:** all 7 landing explore links return 200; no
+  `docs/`, `.env`, `backups/`, video, or build artifact is tracked;
+  the tracked tree contains nothing a judge should not see.

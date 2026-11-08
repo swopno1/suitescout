@@ -66,10 +66,10 @@ the PMS).
 image, the LabLab cover, and the YouTube thumbnail. Pine background,
 reversed Scout Lens mark, wordmark (Suite cream / Scout terracotta),
 the locked tagline, four features at a glance, footer strip "Vultr
-Agent Rush · Track 02 — Powering the Future of Work". Status: the file is in the repo at `public/og-image.png`
-(87,690 bytes, new tagline). It serves at `/og-image.png` once
-the VM is rebuilt with the current tip — until the rebuild, that
-path 404s.
+Agent Rush · Track 02 — Powering the Future of Work". Status: the
+file is in the repo at `public/og-image.png` (87,690 bytes, new
+tagline) and serves live at `/og-image.png` (verified 200 on
+2026-11-08).
 
 ## Public home
 
@@ -100,8 +100,15 @@ here" band. The prospect board lives behind the login at `/board`.
   OG image asset added (1200×630, `public/og-image.png`). Public
   landing page live at suitescout.vivereply.com (board at `/board`).
 - 2026-11-08: OG image renamed to `public/og-image.png` in the
-  repo (87,690 bytes, new tagline) — VM rebuild pending before it
-  serves. Demo video filmed and edited (2:27, fresh narration;
-  the OG image is its YouTube thumbnail). Pitch deck re-rendered
-  with the real screenshots (slides 4–5); video link added. Final
-  docs staged for the submission (tip `538462b`).
+  repo (87,690 bytes, new tagline). Demo video filmed and edited
+  (2:27, fresh narration; the OG image is its YouTube thumbnail).
+  Pitch deck re-rendered with the real screenshots (slides 4–5);
+  video link added. Final docs staged for the submission (tip
+  `538462b`).
+- 2026-11-08: Submitted (tip `9ab13da`). VM rebuilt — `/og-image.png`
+  serves 200, landing page live at `/`, board at `/board`.
+  Post-submission inspection: `05-settigns.png` typo renamed to
+  `05-settings.png`; landing copy corrected (booking-engine −30
+  label, verified-only scout destinations, test-email exception
+  stated, unproven "verified test restore" dropped) — one VM
+  rebuild to take the copy live.

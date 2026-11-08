@@ -74,7 +74,7 @@ const RUBRIC_ROWS: Array<[string, string]> = [
   ["Demand signals", "+10"],
   ["Scale — 20+ rooms or multi-product", "+10"],
   ["Direct booking with payment", "−40"],
-  ["Modern PMS already in place", "−30"],
+  ["Booking engine already in place", "−30"],
 ];
 
 const LOOP_STEPS = [
@@ -96,7 +96,7 @@ const LOOP_STEPS = [
   },
   {
     name: "Follow up",
-    text: "Prepares the next touch and its due date. The follow-up is a draft until a human approves it — it never sends itself.",
+    text: "Prepares the next touch and its due date. There is no scheduled sending — the follow-up waits for a human to act.",
   },
 ];
 
@@ -252,9 +252,8 @@ export default function LandingPage() {
             </p>
             <p className="mt-2 text-sm leading-relaxed text-stone-600">
               Finds new leads from OpenStreetMap across Bangladesh&apos;s
-              resort destinations — Cox&apos;s Bazar, Saint Martin&apos;s
-              Island, Bandarban, Sajek Valley, Sreemangal, Kuakata,
-              Rangamati — and imports them as new prospects.
+              resort destinations — such as Saint Martin&apos;s Island
+              and Sreemangal — and imports them as new prospects.
             </p>
           </article>
         </div>
@@ -301,10 +300,10 @@ export default function LandingPage() {
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-stone-700">
           <li>
             Approved email drafts go out through Resend — nothing sends
-            from an unapproved draft, and the agent never sends on its
-            own.
+            from an unapproved draft. The only send without a draft is
+            the owner-only deliverability test in Settings.
           </li>
-          <li>One email per prospect, ever — and a 10-sends-per-day cap.</li>
+          <li>One email per prospect, ever — and a daily send cap (Settings shows the live value).</li>
           <li>
             Honest limits, stated plainly: there is no scheduled sending
             yet, and no suppression list yet.
@@ -319,7 +318,7 @@ export default function LandingPage() {
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-stone-700">
           <li>A Vultr VM hosts the Next.js app, behind Caddy with TLS.</li>
           <li>Shared Postgres holds the pipeline — prospects, runs, drafts, follow-ups.</li>
-          <li>Nightly database backups, with a verified test restore.</li>
+          <li>Nightly database backups.</li>
           <li>
             Vultr Serverless Inference (DeepSeek V4.1 Flash) writes the
             draft language; scoring stays deterministic code.

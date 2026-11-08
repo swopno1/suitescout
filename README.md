@@ -433,7 +433,7 @@ score, draft, log, follow-up all Done, with the fetch log and the
 source URL for every fact. This trace is Sreemangal's run, not
 Balishira's.*
 
-![Settings — AI connection, email sending, agent defaults](public/screenshots/05-settigns.png)
+![Settings — AI connection, email sending, agent defaults](public/screenshots/05-settings.png)
 
 *Settings — Vultr Serverless Inference key configured (DeepSeek V4.1
 Flash), Resend key configured, auto-send off, and the agent defaults.*
@@ -443,9 +443,8 @@ Flash), Resend key configured, auto-send off, and the agent defaults.*
 The landing page's feature image is `public/og-image.png` (1200×630,
 brand-exact — the same file used as the LabLab cover and the YouTube
 thumbnail). The file is in the repo at that exact path (87,690 bytes, new
-tagline). It serves at `/og-image.png` once the VM is rebuilt with
-the current tip — until the rebuild, that path 404s and the live
-landing page serves without its OG image.
+tagline). It serves live at `/og-image.png` (verified 200,
+87,690 bytes, on 2026-11-08).
 
 ## Current limitations
 
