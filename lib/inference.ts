@@ -8,8 +8,9 @@ export const INFERENCE_BASE_URL = "https://api.vultrinference.com/v1";
 export const DEFAULT_MODEL = "deepseek-v4.1-flash-1017";
 
 /** Models available on Vultr Serverless Inference (verified from the
- *  live catalog). The scoring model is the cheap classifier; the primary
- *  model does research + drafting. */
+ *  live catalog). Only one model is used at a time (see getEffectiveModel
+ *  below); there is no separate scoring-model call path; scoring is
+ *  deterministic code, and the model writes only the reason prose. */
 export const KNOWN_MODELS = [
   {
     id: "deepseek-v4.1-flash-1017",
@@ -28,7 +29,7 @@ export function getDefaultModel(): string {
 }
 
 /** Settings override wins over the env default; env wins over the
- *  hardcoded default. Friday's executor uses this. */
+ *  hardcoded default. Used by chatCompletion for every agent LLM call. */
 export async function getEffectiveModel(): Promise<string> {
   return (await getSetting("inference_model")) || getDefaultModel();
 }
@@ -133,3 +134,4 @@ export async function listModels(): Promise<string[]> {
   const data = (await res.json()) as { data?: { id: string }[] };
   return (data.data || []).map((m) => m.id);
 }
+
