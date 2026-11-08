@@ -7,20 +7,24 @@ UTC. Repo: `swopno1/suitescout`, branch `main`, public.
 Status: the submission polish is **already in `main`**
 (`1901738` README rewrite + MIT LICENSE + these docs, `c17ede9`
 code fixes, `65a4f86` inference-comment fixes, `6528edd` public
-landing page at `/` + board at `/board`, plus the re-inspection
-pass committed with this checklist). Current tip: `af8d121`
-(founder: OG image content updated). Everything under "Already
-done" below is verified on the repo — the founder work left is the
-OG-image rename + rebuild, video, screenshots, LabLab filing, and
-the final live verify. Total founder work below: roughly 3–4
-hours.
+landing page at `/` + board at `/board`, `4c91fa4` tagline
+"Resort PMS sales-ops" in code, `81789bb` + `e46215b` docs refresh
+and OG-status correction). Current tip: `538462b`
+(2026-11-08 ~15:00). The video is filmed and edited, the five screenshots
+are taken, and the pitch deck carries the real screenshots. What is
+left is founder-only: the 01-login file swap, a VM rebuild,
+pushing these final docs, and the LabLab filing itself. Total
+founder work below: roughly 1.5 hours.
 
 ## Already done (verified in `main` — do not redo)
 
 - [x] **README rewritten and truth-audited.** Every claim checked
   against the code: 8 tables, app-only compose, full env table (9
   vars), 19 verified API routes, working local + VM setup, honest
-  "Current limitations". Re-verified at `c17ede9` + re-inspection.
+  "Current limitations". Re-verified at tip `3dcb1e3` (rubric,
+  10/day cap, one-email-per-prospect guard, 12h HMAC sessions,
+  batch cap 25, OSM scout, 20-prospect seed — all re-read from the
+  code at this tip).
 - [x] **LICENSE: MIT.** `LICENSE` at the repo root (Copyright (c) 2026
   Md Amir Hossain), `"license": "MIT"` + `"author": "Md Amir
   Hossain"` in `package.json`, README License section reads MIT.
@@ -47,101 +51,121 @@ hours.
   writes only the reason prose. The stale "Friday's executor"
   reference is gone too.
 - [x] **Public landing page at `/`, board at `/board`** (`6528edd`,
-  8 files): landing page (brand, locked tagline "ViveReply's Resort
-  PMS sales-ops", judges band, five-step loop, rubric, guardrails,
+  8 files): landing page (brand, locked tagline "Resort PMS
+  sales-ops", judges band, five-step loop, rubric, guardrails,
   Vultr stack, 7 explore links, no demo password); board moved
   verbatim to `/board`; middleware PUBLIC gained `/` +
   `/og-image.png`; Nav Board→`/board` + Log in only on `/`; login
   lands on `/board`; layout metadata + corrected title. Verified
-  live 2026-11-08 ~12:31: `/` returns 200 with the landing
-  content, `/board` logged out → 307 to `/login?next=/board`.
+  live 2026-11-08 ~12:31 and again ~14:55: `/` returns 200 with
+  the landing content, `/board` logged out → 307 to `/login`,
+  `/login` 200.
+- [x] **Tagline "Resort PMS sales-ops" in code** (`4c91fa4`):
+  landing hero, header subtitle, login subtitle, OG alt text.
+  Submission title unchanged: "SuiteScout — ViveReply's Resort PMS
+  sales agent".
+- [x] **Docs refresh + OG-status correction** (`81789bb`,
+  `e46215b`): README title/tagline, live-demo paragraph, login
+  section (public exceptions), UI tour order, checklist re-sync,
+  BRAND.md tagline + feature-image + public-home sections.
+- [x] **Demo video filmed + edited** (2026-11-08 ~14:12):
+  2:27, 1920×1160, edited cut of the founder's 4:22 take. Opens on
+  the public landing page → "Open live demo" → login as `demo` →
+  board (29 prospects) → Balishira Resort (55 Warm, live) → drafts
+  → Approve on camera (Approve-only, no send filmed) → run trace
+  (Run #37, Sreemangal Eco Resort) → Settings. Fresh narration
+  voiceover, soft music bed; the founder's unclean voiceover and
+  the saved-password dropdown (which showed his other accounts)
+  are cut out entirely. Link: https://youtu.be/4V5lu60qQC8
+- [x] **Five screenshots taken** (2026-11-08 ~13:52, viewport
+  captures 2880×1740): `01-login.png`, `02-board.png`,
+  `03-prospect-detail.png`, `04-run-trace.png`, `05-settigns.png`
+  (+ `00-home.png`, the landing page — not for the README).
+  Uploaded to the repo at `public/screenshots/` (2026-11-08
+  ~15:00). **Watch out:** the uploaded `01-login.png` is a second
+  copy of the landing page, not the login form — the real login
+  capture is the full-page file `01-login_full.png`, which must
+  replace it as `public/screenshots/01-login.png` (item 1).
+- [x] **Pitch deck re-rendered with the real screenshots**
+  (2026-11-08 ~14:09): slide 4 = 01-login + 02-board, slide 5 =
+  04-run-trace + 03-prospect-detail; speaker notes corrected (29
+  prospects, all drafted; the trace is Sreemangal Run #37). PDF +
+  PPTX under the same names. The video link is in
+  (2026-11-08 ~14:56, https://youtu.be/4V5lu60qQC8); both files
+  re-exported. (Slide 4's login image is the landing duplicate
+  until the 01-login swap — re-render after the swap.)
 
 ## Founder work — in order
 
 Work the items in order. Each item states its done-condition — it is
 done only when that condition is met, not when the step was attempted.
 
-### 1. VM deploy-verify — ~30–45 min — DO FIRST
+### 1. Uploads + rename — DONE; VM rebuild — DO FIRST
 
-Deploy the tip **before** recording, so the video shows the final
-build (public landing page + board at `/board`). The landing route
-is already live and verified by curl (`/` 200, `/board` → 307) —
-what remains here is the login + board + run check from your
-browser, plus the OG-image rename (step 9).
-
-- **Action:** On the VM, from `~/suitescout`:
-  `git pull --ff-only` then `docker compose up -d --build`. Then
-  verify, by seeing each one work:
+- **OG image rename — DONE** (2026-11-08 ~15:00).
+  `public/og-image.png` now exists in the repo (87,690 bytes, new
+  tagline); the old-named `public/suitescout-og-image.png` is
+  gone. Nothing left to upload or rename — only the VM rebuild
+  (Action 3) before `/og-image.png` serves.
+- **Screenshots upload — DONE, one file to swap.** The five
+  screenshots are committed under `public/screenshots/`:
+  `01-login.png`, `02-board.png`, `03-prospect-detail.png`,
+  `04-run-trace.png`, `05-settigns.png` (note the filename typo —
+  the file really is spelled `settigns`; the README references it
+  as-is). **One swap remains:** the uploaded `01-login.png` is a
+  second copy of the landing page, not the login form. Replace it
+  with the full-page login capture (`01-login_full.png`) uploaded
+  as `public/screenshots/01-login.png` (GitHub web UI: open the
+  file, delete it, upload the full-page file under the same name).
+  Do **not** put screenshots under `docs/` (`docs/*` is
+  gitignored — files there can never be committed). Do not upload
+  `00-home.png` to the repo (the landing page is already the
+  README's feature image subject; the file is not referenced).
+  Use the viewport versions (not the full-page alternates) for the
+  LabLab submission too — the full-page `03-prospect-detail`
+  alternate shows prospect phone numbers in plain text below the
+  fold; the viewport versions show none.
+- **Action 3 — VM rebuild.** On the VM, from `~/suitescout`:
+  `git pull --ff-only` then `docker compose up -d --build`.
+  Then verify:
   1. `curl -s -o /dev/null -w "%{http_code}\n" https://suitescout.vivereply.com/`
-     — expect **200** (the public landing page). Then
-     `curl -s -I https://suitescout.vivereply.com/board` — expect
+     — expect **200** (the public landing page, new tagline).
+  2. `curl -s -o /dev/null -w "%{http_code}\n" https://suitescout.vivereply.com/og-image.png`
+     — expect **200** (the rename worked).
+  3. `curl -s -I https://suitescout.vivereply.com/board` — expect
      **307** to `/login?next=/board`. The board must never serve
      unauthenticated.
-  2. Log in with `demo` + `APP_PASSWORD`. A wrong password must fail.
-  3. Board loads and shows the 20 seeded prospects (unscored until a
-     run — that is correct behaviour, not a bug).
-  4. Run the loop once on a demo prospect and check the score against
-     the README rubric by hand.
-  5. Run one area scout from a working query (e.g. `St. Martin's
-     Island` — type the full name, never bare "Saint Martin":
-     geocode is first-result-wins and the bare name can resolve to
-     the wrong island; verified: 8 leads) and watch it land on
-     `/scout`. (Do not demo `Cox's Bazar` — Nominatim returns only
-     the district and the scout refuses it as too broad. `Sreemangal`
-     and `Mongla town` also work; `Srimongol` is a typo for
-     `Sreemangal`.)
-  6. One manual Send of an approved email draft — an outreach send,
-     so it consumes one of the 10 daily sends. (The Settings test
-     email is cap-exempt and does not prove the outreach path; use it
-     only to check Resend deliverability.)
-  7. `node scripts/scoring-test.ts` — expect 6/6. Needs Node ≥22.6;
-     the app container runs Node 20, so run this on a machine with a
-     newer Node, not inside the app container.
-  8. Confirm the nightly backup exists: a dump in
+  4. Log in with `demo` + `APP_PASSWORD`. A wrong password must fail.
+  5. Board loads and shows **29 prospects** (0 Hot, 4 Warm, 25
+     Cold), 107 drafts ready, 37 follow-ups set — the 20 seeded
+     plus 9 added since, all researched, scored, and drafted.
+  6. Confirm the nightly backup exists: a dump in
      `~/suitescout/backups/` from `./scripts/pg-backup.sh` (cron
      03:10 Asia/Dhaka).
-  9. Fix the OG image in the repo: `public/suitescout-og-image.png`
-     already holds the correct 1200×630 PNG (commit `af8d121`) — but
-     with the old tagline baked in. Upload the new-tagline PNG as
-     `public/og-image.png` and delete the old-named file (GitHub web
-     UI; the page metadata references `/og-image.png`, which 404s
-     until this is done). Rebuild after the upload
-     (`docker compose up -d --build`), then confirm
-     `https://suitescout.vivereply.com/og-image.png` returns 200.
-- **Done when:** every numbered check above has been seen passing on
-  the live VM, including the login, the board, one full run, one
-  scout, one manual send, and the OG image serving at
-  `/og-image.png`.
+- **Done when:** `/og-image.png` returns 200,
+  `public/screenshots/01-login.png` shows the login form, and the
+  board shows the 29 prospects above.
 
-### 2. Record the video — ~60–90 min
+### 2. Push the final docs — ~10 min
 
-- **Action:** Record the walkthrough from the live site at
-  https://suitescout.vivereply.com: landing page → "Open live demo"
-  → login as `demo` → board at `/board` → one run on a demo-trio
-  prospect (The Cox Beach Resort, Sundori Eco Resort, or Balishira
-  Resort) showing research → score → draft → follow-up draft →
-  approve/send flow → scout → settings. Follow the video script
-  delivered 2026-11-08 (it opens on the landing page) word-for-word.
-  Mask any real contact details on screen. No video exists in the
-  repo; do not commit a video file to the repo — upload it and link
-  it in the LabLab submission.
-- **Done when:** the video plays end-to-end, shows the login → board
-  → run → draft sequence on the live site, and its link is pasted in
-  the LabLab submission.
+- **Action:** Push the five final docs (staged at
+  `~/workspace/vultr-hackathon/docs-final/` — README.md,
+  SUBMISSION-CHECKLIST.md, README-INCLUDE-REMOVE.md,
+  FIXES-FOR-FOUNDER.md, BRAND.md) to `main`. Push now — the
+  README's image embeds (`public/og-image.png`,
+  `public/screenshots/*.png`) already resolve on github.com. The
+  VM rebuild (item 1, Action 3) does not block the push.
+- **Done when:** the tip on `main` contains the final docs and
+  every image reference in the README resolves on github.com.
 
-### 3. Take the real screenshots — ~20 min
+### 3. Drop the video link into the deck — DONE
 
-- **Action:** From the live site after logging in (the board is at
-  `/board` now), capture five screenshots and save them at the repo
-  root under `screenshots/`:
-  `01-login.png`, `02-board.png`, `03-prospect-detail.png`,
-  `04-run-trace.png`, `05-settings.png`. Upload the same five files
-  to the LabLab submission. Do **not** put them under `docs/`
-  (`docs/*` is gitignored — files there can never be committed).
-  Commit the `screenshots/` folder to `main` when done.
-- **Done when:** all five files exist under `screenshots/`, each shows
-  the screen its name says, all five are attached in LabLab, and the
-  folder is committed.
+- **Done** (2026-11-08 ~14:56): the YouTube link
+  (https://youtu.be/4V5lu60qQC8) is on slide 4 of the pitch deck
+  (clickable in the PDF and the PPTX); both files re-exported
+  under the same names. One follow-up: after the 01-login swap
+  (item 1), re-render the deck so slide 4's login image shows the
+  login form instead of the landing page.
 
 ### 4. File the LabLab submission (with demo login) — ~30 min
 
@@ -149,22 +173,24 @@ browser, plus the OG-image rename (step 9).
   (`https://github.com/swopno1/suitescout`), demo URL
   (https://suitescout.vivereply.com), demo login (username `demo`,
   password = `APP_PASSWORD` from `~/suitescout/.env` on the VM),
-  video link (item 2), screenshots (item 3), and the write-up — use
-  the README's intro + five-step loop + scoring rubric as the source.
-  Do not reintroduce struck claims (no "verified live" board scores,
-  no Qwen scoring, no "one email per draft", no "nothing else sends,
-  ever"). State the limitations honestly — the README's "Current
-  limitations" section is the approved wording. The password goes in
-  the submission only — never in the README or the repo.
-- **Status 2026-11-08 ~12:50:** Step 1 content is prepared — title
+  video link (https://youtu.be/4V5lu60qQC8), screenshots (item 1),
+  cover image (the OG image — item 1), pitch deck PDF (item 3),
+  and the write-up — use the README's intro + five-step loop +
+  scoring rubric as the source. Do not reintroduce struck claims
+  (no "verified live" board scores, no Qwen scoring, no "one email
+  per draft", no "nothing else sends, ever", no scheduled sending,
+  no STOP guarantee). State the limitations honestly — the README's
+  "Current limitations" section is the approved wording. The
+  password goes in the submission only — never in the README or
+  the repo.
+- **Status 2026-11-08 ~14:55:** Step 1 content is prepared — title
   "SuiteScout — ViveReply's Resort PMS sales agent" (locked),
   short + long descriptions done; Technologies: select Vultr +
   Qwen3 only; Categories: pick Business, Productivity,
   Assistant / Virtual Assistant, Email (Sales over Assistant if
   present — exact list still to confirm from the open dropdown).
-  Step 2 still needs: cover image (the OG image — rename first,
-  item 1 step 9), video file (item 2), pitch deck PDF (not built
-  yet).
+  Step 2 needs: cover image (item 1), video link (done — paste
+  the YouTube URL), pitch deck PDF (item 3), screenshots (item 1).
 - **Done when:** LabLab shows the submission complete/submitted with
   every field filled, including the demo login and the video link.
 
@@ -174,7 +200,14 @@ browser, plus the OG-image rename (step 9).
   https://suitescout.vivereply.com, log in with the demo login from
   the submission, open the board, open one prospect detail, open one
   run trace, open settings. Confirm no 500s, no redirect loop, and
-  that every screen matches its screenshot from item 3.
+  that every screen matches its screenshot from item 1. One
+  manual Send of an approved email draft is still unproven as the
+  outreach path: Settings shows "1 sent in the last 24h", but
+  whether that was the outreach send or the cap-exempt test email
+  is unconfirmed — if you want the outreach path proven before
+  filing, do one manual Send now (it consumes one of the 10 daily
+  sends; a prospect that has already been emailed cannot be emailed
+  again, so pick the prospect deliberately).
 - **Done when:** all five screens load cleanly from a fresh session
   with the exact demo credentials in the submission. If anything
   fails, fix it and repeat this item — do not submit on a broken
@@ -203,8 +236,9 @@ browser, plus the OG-image rename (step 9).
    parked items (Approve-button warning, Demo-badge label, fact-sheet
    Yes/No, "In talks" label, settings count label, empty-board first
    step, STOP suppression, follow-up mark-done + follow-up email
-   exception, `/api/health`, non-root `USER`, scheduled sending)
-   are not submission blockers — do them after judging, not before.
+   exception, `/api/health`, non-root `USER`, scheduled sending,
+   Settings daily-cap copy) are not submission blockers — do them
+   after judging, not before.
    - *Done when:* each item is applied or explicitly dropped, after
      judging.
 6. **Rotate the demo password after judging.** Set a new
@@ -217,14 +251,15 @@ browser, plus the OG-image rename (step 9).
 | Item | Status | Notes |
 |---|---|---|
 | Repo public | ✅ | `swopno1/suitescout`, `main`, public. |
-| README with architecture explanation | ✅ | Truth-audited README in `main` — accurate architecture (8 tables, app container only in this repo's compose, Postgres + Caddy in the separate platform stack, Resend leg, scout queue), verified API table, full env table, working local + VM setup, honest limitations. |
-| Landing page at `/` | ✅ | Live, verified 2026-11-08 ~12:31 — `/` returns 200 with the landing content (tagline, judges band, five-step loop). |
-| VM backend live | 🟡 | Live at https://suitescout.vivereply.com. Board login-wall verified (307 → `/login?next=/board`). Founder post-login verify still open in item 1 above. |
-| OG image (`public/og-image.png`) | 🟡 | Correct 1200×630 image in the repo as `public/suitescout-og-image.png` (verified by blob SHA); rename + rebuild pending — item 1, step 9. |
+| README with architecture explanation | ✅ | Truth-audited README in `main` — accurate architecture (8 tables, app container only in this repo's compose, Postgres + Caddy in the separate platform stack, Resend leg, scout queue), verified API table, full env table, working local + VM setup, honest limitations. Final version staged for push (item 2). |
+| Demo video | ✅ | 2:27 walkthrough, edited: https://youtu.be/4V5lu60qQC8 |
+| Screenshots | ✅ in repo, 01-login swap pending | Five files committed under `public/screenshots/`; `01-login.png` is a landing duplicate — swap in the full-page login capture (item 1). |
+| Landing page at `/` | ✅ | Live, verified 2026-11-08 ~14:55 — `/` returns 200 with the landing content (tagline, judges band, five-step loop). |
+| VM backend live | ✅ | Live at https://suitescout.vivereply.com. Board login-wall verified (307 → `/login`). Board shows 29 prospects, 107 drafts, 37 follow-ups. |
+| OG image (`public/og-image.png`) | 🟡 rename done, rebuild pending | File in the repo at `public/og-image.png` (87,690 bytes, new tagline); serves at `/og-image.png` after the VM rebuild (item 1). |
+| Pitch deck | ✅ video link in | PDF + PPTX with real screenshots + https://youtu.be/4V5lu60qQC8 on slide 4. Re-render after the 01-login swap (item 1). |
 | Demo URL in the submission | 🟡 | https://suitescout.vivereply.com — item 4. |
 | Demo login in the submission | 🔴 founder-owned | Username `demo`, password = `APP_PASSWORD` — item 4. Never in the README or repo. |
-| Recorded video | 🔴 founder-owned, MISSING | Item 2. Script updated 2026-11-08 (opens on the landing page). |
-| Screenshots | 🔴 founder-owned, MISSING | Item 3. |
 | LICENSE | ✅ MIT | `LICENSE` committed; README License section reads MIT. |
 
 ## Known limitations — do not claim as done
@@ -259,5 +294,7 @@ write-up.)
   OG/Twitter images point at `/og-image.png`; any image meant as the
   feature image must live at exactly that path in `public/` — a
   differently-named file will 404 (or sit behind the login wall).
-
-
+- **Use the viewport screenshots for LabLab.** The full-page
+  alternates are taller and, for the prospect detail, show prospect
+  phone numbers below the fold. The viewport versions show no
+  contact details.

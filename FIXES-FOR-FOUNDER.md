@@ -3,8 +3,8 @@
 Small code / copy fixes found by the truth audit, the UI audit, and
 the re-inspection pass. Status is tracked inline: DONE items are in
 `main`, PARKED items wait until after judging. No secrets here.
-Current tip: `af8d121` (2026-11-08) — items 11–12 landed since the
-last sync.
+Current tip: `538462b` (2026-11-08 ~15:00) — items 24–27 landed since the
+last sync (tagline, docs refresh, video, deck screenshots).
 
 ## Done before submitting (in `main`)
 
@@ -65,6 +65,50 @@ last sync.
     live 2026-11-08 ~12:31 (`/` 200 public, `/board` logged-out
     307).
 
+## Done since the last sync (2026-11-08, tip `3dcb1e3`)
+
+- ✅ **Tagline "Resort PMS sales-ops" in code** (landed `4c91fa4`).
+  Landing hero, header subtitle, login subtitle, OG alt text. The
+  submission title is unchanged ("SuiteScout — ViveReply's Resort
+  PMS sales agent").
+- ✅ **Docs refresh + OG-status correction** (landed `81789bb`,
+  `e46215b`). README title/tagline, live-demo paragraph, login
+  section (public exceptions), UI tour order, checklist re-sync,
+  BRAND.md tagline + feature-image + public-home sections. The
+  OG-status correction fixed a stale-evidence error: the file in
+  the repo as `public/suitescout-og-image.png` is the new-tagline
+  1200×630 PNG (87,690 bytes) — the rename is done (2026-11-08
+  ~15:00, `public/og-image.png` in the repo, old name gone); only
+  the VM rebuild remains before `/og-image.png` serves.
+- ✅ **Demo video filmed + edited** (2026-11-08 ~14:12). The
+  founder's 4:22 take, edited to 2:27 (1920×1160): landing → login
+  → board (29 prospects) → Balishira Resort (55 Warm, live) →
+  drafts → Approve on camera (Approve-only, no send filmed) → run
+  trace (Run #37, Sreemangal Eco Resort) → Settings. Fresh
+  narration voiceover replaces the founder's unclean take; soft
+  music bed; the saved-password dropdown (which showed his other
+  accounts) is cut out entirely. Link:
+  https://youtu.be/4V5lu60qQC8 — also in the README's new Demo
+  video section.
+- ✅ **Pitch deck re-rendered with the real screenshots**
+  (2026-11-08 ~14:09). Slide 4 = 01-login + 02-board, slide 5 =
+  04-run-trace + 03-prospect-detail; speaker notes corrected (29
+  prospects, all drafted; the trace is Sreemangal Run #37). PDF +
+  PPTX under the same names. The video link is in (2026-11-08
+  ~14:56, https://youtu.be/4V5lu60qQC8); both files re-exported.
+  (Slide 4's login image is the landing duplicate until the
+  01-login swap — re-render after the swap.)
+- ✅ **Five screenshots taken + staged** (2026-11-08 ~13:52).
+  Viewport captures 2880×1740, uploaded to the repo at
+  `public/screenshots/` (2026-11-08 ~15:00). **Found while
+  captioning:** the viewport file sent as `01-login.png` is a
+  second copy of the landing page, not the login form — the real
+  login capture is the full-page `01-login_full.png`, which must
+  replace it as `public/screenshots/01-login.png` (checklist
+  item 1). The other four match their names (board at 29
+  prospects; Balishira 55 Warm; Sreemangal Run #37, 30 Cold;
+  Settings).
+
 ## Parked until after judging (do not claim as done)
 
 Copy fixes (UI strings):
@@ -84,9 +128,9 @@ Copy fixes (UI strings):
 17. **Settings "X sent in last 24h" — unexplained.** The count is
     outreach emails only (`status = 'sent' AND channel = 'email'`);
     there is no send log behind it. Label the count honestly.
-18. **Empty board — no first step.** An unscored board shows 20
-    prospects and no guidance. Add one line: run a prospect (or
-    "Run all New") to score it.
+18. **Empty board — no first step.** An unscored board shows the
+    seeded prospects and no guidance. Add one line: run a prospect
+    (or "Run all New") to score it.
 
 Missing features (decide; do not claim as done):
 
@@ -111,4 +155,10 @@ Missing features (decide; do not claim as done):
 23. **No scheduled sending.** Follow-up "due" is only a date string;
     nothing ever fires follow-ups. Out of scope for this submission
     unless the founder explicitly wants it built.
-
+24. **Settings daily-cap copy is stale.** The auto-send explainer
+    says "never more than 20 emails per 24 hours", but the enforced
+    cap is 10/day (`DAILY_SEND_CAP` default 10, `lib/email.ts`) —
+    and the landing page itself says "10-sends-per-day cap". A judge
+    comparing the two screens catches the contradiction. One-line
+    copy fix: make the Settings string say 10. Do not quote the
+    stale number in the README or the submission.

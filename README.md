@@ -2,6 +2,8 @@
 
 *Resort PMS sales-ops.*
 
+![SuiteScout — Resort PMS sales-ops](public/og-image.png)
+
 ViveReply sells its Suite (Resort PMS + direct-booking website) **to
 resorts**. Finding those resorts, checking whether they need the Suite,
 and writing the first message is slow, manual work — the founder does
@@ -18,6 +20,18 @@ log in with the demo login published in the LabLab submission
 The prospect board lives at `/board` after login. See
 [Login](#login).
 
+## Demo video
+
+Watch the 2:27 walkthrough: https://youtu.be/4V5lu60qQC8
+
+It opens on the public landing page, logs in as `demo`, and walks the
+live board — 29 prospects, all researched, scored, and drafted — then
+Balishira Resort (55 Warm, a live board score), the drafts, and an
+Approve on camera. The approval is the story: Approve-only, no send
+is filmed. The run trace shown is Run #37 for Sreemangal Eco Resort
+(30 Cold), and Settings closes the tour. The voiceover is a fresh
+narration, not the founder's recorded take.
+
 > **Status.** The five-step loop runs for real — live fetch +
 > extraction, deterministic rubric scoring, LLM drafting (template
 > fallback when no inference key is set), board logging, follow-up
@@ -25,14 +39,18 @@ The prospect board lives at `/board` after login. See
 > `scripts/scoring-test.ts` — The Cox Beach Resort 80 Hot, Sundori Eco
 > Resort 70 Hot, Balishira Resort 55 Warm, Giriraj Resort 55 Warm —
 > and the regression test passes 6/6 (`node scripts/scoring-test.ts`).
-> Those scores come from the test fixtures, not from live board data:
-> the seed database carries no scores or research, so a fresh board
-> shows 20 unscored prospects and scores appear only after a run.
+> Those scores come from the test fixtures, not from live board data.
+> The seed database carries no scores or research: a fresh empty
+> database seeds 20 unscored prospects, and scores appear only after
+> a run. The live board at suitescout.vivereply.com shows 29
+> prospects as of 2026-11-08 — the 20 seeded plus 9 added since —
+> all researched, scored, and drafted (0 Hot, 4 Warm, 25 Cold, 107
+> drafts ready, 37 follow-ups set).
 
 ## The five-step loop
 
 1. **Research** — fetches a prospect resort's live public web presence
-   (website, Facebook page, listings) and extracts facts. Every fact
+   (website and listings) and extracts facts. Every fact
    cites its source URL; unverifiable facts stay "unknown".
 2. **Score** — applies a deterministic 0–100 rubric (see below). The
    rules compute the score; the model writes the reasons.
@@ -114,12 +132,13 @@ SuiteScout on a Vultr Cloud Compute VM (Docker)
   │     https://api.vultrinference.com/v1
   │     Default model: deepseek-v4.1-flash-1017. Scoring itself is
   │     deterministic code; the configured model writes the reason
-  │     prose. (Qwen 3.8 Flash Next appears in Settings as a
-  │     selectable model; it is not used for scoring.)
+  │     prose. (Qwen 3.8 Flash Next, GLM 5.3 Flash, and MiMo V2.6
+  │     Flash appear in Settings as selectable models; none is used
+  │     for scoring.)
   ├─ Resend — outbound email (manual Send + qualified auto-send,
   │    plus the owner-only test email)
   └─ Live web fetch — the research step fetches the prospect's
-       public website / Facebook / listings at run time
+       public website and listings at run time
   ▼
 Prospect resort's public website / Facebook / listings
 ```
@@ -387,32 +406,46 @@ settings (AI connection, email sending, data overview).
 
 ### Screenshots
 
-<!-- TODO (founder): replace each placeholder below with a screenshot
-     taken from the live board after logging in. Suggested files, at
-     the repo root under screenshots/ (NOT under docs/ — docs/* is
-     gitignored, so screenshots placed there can never be committed):
-     screenshots/01-login.png, screenshots/02-board.png,
-     screenshots/03-prospect-detail.png, screenshots/04-run-trace.png,
-     screenshots/05-settings.png. The same files go into the LabLab
-     submission. No screenshots exist in the repo yet — do not ship
-     this section with images you have not taken. -->
+Taken from the live board on 2026-11-08 (viewport captures,
+2880×1740). The same five files go into the LabLab submission.
 
-- Login — `screenshots/01-login.png` *(placeholder — founder to add)*
-- Pipeline board — `screenshots/02-board.png` *(placeholder — founder to add)*
-- Prospect detail — `screenshots/03-prospect-detail.png` *(placeholder — founder to add)*
-- Run view, live step trace — `screenshots/04-run-trace.png` *(placeholder — founder to add)*
-- Settings — `screenshots/05-settings.png` *(placeholder — founder to add)*
+![Login — the session login at /login, username demo](public/screenshots/01-login.png)
+
+*Login — the branded login page: one shared login, username `demo`,
+password from the submission. Sessions last 12 hours.*
+
+![Prospect board — 29 prospects, all in Drafted](public/screenshots/02-board.png)
+
+*Prospect board — 29 prospects (0 Hot, 4 Warm, 25 Cold), 107 drafts
+ready, 37 follow-ups set; every prospect sits in Drafted. The area
+scout and manual-add forms sit above the board.*
+
+![Balishira Resort — 55 Warm, live board score](public/screenshots/03-prospect-detail.png)
+
+*Prospect detail — Balishira Resort, 55 Warm: the four rubric reasons
+that fired, the position rail (New → Researched → Drafted, 8 Nov),
+and the research fact sheet.*
+
+![Run #37 (Sreemangal Eco Resort) — the five-step trace](public/screenshots/04-run-trace.png)
+
+*Run view — Run #37 for Sreemangal Eco Resort (30 Cold): research,
+score, draft, log, follow-up all Done, with the fetch log and the
+source URL for every fact. This trace is Sreemangal's run, not
+Balishira's.*
+
+![Settings — AI connection, email sending, agent defaults](public/screenshots/05-settigns.png)
+
+*Settings — Vultr Serverless Inference key configured (DeepSeek V4.1
+Flash), Resend key configured, auto-send off, and the agent defaults.*
 
 ### Feature image (OG image)
 
 The landing page's feature image is `public/og-image.png` (1200×630,
 brand-exact — the same file used as the LabLab cover and the YouTube
-thumbnail). Status at this writing: the file in the repo as
-`public/suitescout-og-image.png` IS the correct 1200×630 PNG
-(commit `af8d121`) — but it carries the old tagline. Upload the
-new-tagline PNG as `public/og-image.png` and delete the old-named
-file, then rebuild, before the metadata path (`/og-image.png`)
-resolves — until then that path 404s.
+thumbnail). The file is in the repo at that exact path (87,690 bytes, new
+tagline). It serves at `/og-image.png` once the VM is rebuilt with
+the current tip — until the rebuild, that path 404s and the live
+landing page serves without its OG image.
 
 ## Current limitations
 
@@ -429,7 +462,7 @@ Stated plainly, because a judge will find them anyway:
   "Just reply STOP and you won't hear from us again" — has no
   mechanism behind it: no inbox is processed and no suppression table
   exists, so a STOP reply currently does nothing. The one-email-per-
-  approved-draft guard is real, but it is not a suppression list.
+  prospect guard is real, but it is not a suppression list.
 - **No `/api/health` endpoint.** The compose healthcheck probes `/`,
   which now serves the public landing page (200) — it confirms the
   app serves, but there is still no dedicated health route.
@@ -465,5 +498,3 @@ and the rubric gets sharper with each real outcome.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-
