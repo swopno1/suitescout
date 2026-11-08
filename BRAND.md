@@ -67,9 +67,9 @@ image, the LabLab cover, and the YouTube thumbnail. Pine background,
 reversed Scout Lens mark, wordmark (Suite cream / Scout terracotta),
 the locked tagline, four features at a glance, footer strip "Vultr
 Agent Rush · Track 02 — Powering the Future of Work". Status: the file in the repo as `public/suitescout-og-image.png` is
-a 498×261 WebP preview, not the correct image — delete it and upload
-the correct 1200×630 PNG as `public/og-image.png`, then rebuild,
-before it serves at `/og-image.png`.
+the correct 1200×630 PNG (commit `af8d121`) with the old tagline —
+upload the new-tagline PNG as `public/og-image.png` and delete the
+old-named file, then rebuild, before it serves at `/og-image.png`.
 
 ## Public home
 
@@ -99,4 +99,5 @@ here" band. The prospect board lives behind the login at `/board`.
   already carry the ViveReply name).
   OG image asset added (1200×630, `public/og-image.png`). Public
   landing page live at suitescout.vivereply.com (board at `/board`).
+
 

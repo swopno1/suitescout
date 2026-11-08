@@ -408,11 +408,11 @@ settings (AI connection, email sending, data overview).
 The landing page's feature image is `public/og-image.png` (1200×630,
 brand-exact — the same file used as the LabLab cover and the YouTube
 thumbnail). Status at this writing: the file in the repo as
-`public/suitescout-og-image.png` is NOT the correct image — it is a
-498×261 WebP preview (verified by download). Delete it and upload the
-correct 1200×630 PNG as `public/og-image.png`, then rebuild, before
-the metadata path (`/og-image.png`) resolves — until then that path
-404s.
+`public/suitescout-og-image.png` IS the correct 1200×630 PNG
+(commit `af8d121`) — but it carries the old tagline. Upload the
+new-tagline PNG as `public/og-image.png` and delete the old-named
+file, then rebuild, before the metadata path (`/og-image.png`)
+resolves — until then that path 404s.
 
 ## Current limitations
 
@@ -465,4 +465,5 @@ and the rubric gets sharper with each real outcome.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
 

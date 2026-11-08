@@ -100,12 +100,12 @@ browser, plus the OG-image rename (step 9).
   8. Confirm the nightly backup exists: a dump in
      `~/suitescout/backups/` from `./scripts/pg-backup.sh` (cron
      03:10 Asia/Dhaka).
-  9. Fix the OG image in the repo: delete
-     `public/suitescout-og-image.png` — it is a 498×261 WebP preview,
-     not the correct image (verified by download) — and upload the
-     correct 1200×630 PNG as `public/og-image.png` (GitHub web UI;
-     the page metadata references `/og-image.png`, which 404s until
-     this is done). Rebuild after the upload
+  9. Fix the OG image in the repo: `public/suitescout-og-image.png`
+     already holds the correct 1200×630 PNG (commit `af8d121`) — but
+     with the old tagline baked in. Upload the new-tagline PNG as
+     `public/og-image.png` and delete the old-named file (GitHub web
+     UI; the page metadata references `/og-image.png`, which 404s
+     until this is done). Rebuild after the upload
      (`docker compose up -d --build`), then confirm
      `https://suitescout.vivereply.com/og-image.png` returns 200.
 - **Done when:** every numbered check above has been seen passing on
@@ -259,4 +259,5 @@ write-up.)
   OG/Twitter images point at `/og-image.png`; any image meant as the
   feature image must live at exactly that path in `public/` — a
   differently-named file will 404 (or sit behind the login wall).
+
 
