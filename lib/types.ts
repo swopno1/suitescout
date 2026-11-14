@@ -191,3 +191,96 @@ export interface AdminAction {
   after: Record<string, unknown>;
   reason: string;
 }
+
+/** S4 pricing: one sellable line. Money in minor units (cents/poisha). */
+export interface PriceItem {
+  id: number;
+  key: string;
+  name: string;
+  group: string;
+  intl_monthly_cents: number | null;
+  bd_onetime_poisha: number | null;
+  bd_monthly_poisha: number | null;
+  bd_floor_poisha: number | null;
+  editable: boolean;
+  active: boolean;
+  members: string[] | null;
+  sort_order: number;
+}
+
+export interface PriceRule {
+  key: string;
+  value: string;
+  note: string;
+}
+
+export type QuoteMarket = "intl-sub" | "bd-onetime" | "bd-modelb";
+export type QuoteState = "draft" | "sent" | "accepted" | "declined" | "expired";
+
+export interface QuoteLine {
+  key: string;
+  name: string;
+  /** 'onetime' | 'monthly' | 'note' (terms with no figure, e.g. Model B 5%). */
+  kind: "onetime" | "monthly" | "note";
+  unit_minor: number | null;
+  note: string | null;
+}
+
+export interface Quote {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  customer_name: string;
+  prospect_id: number | null;
+  market: QuoteMarket;
+  items: string[];
+  hosting_key: string | null;
+  domain_label: string | null;
+  domain_amount_minor: number | null;
+  domain_currency: "USD" | "BDT" | null;
+  chatbot_tier: string | null;
+  state: QuoteState;
+  valid_until: string | null;
+  lines: QuoteLine[];
+  total_onetime_minor: number | null;
+  total_monthly_minor: number | null;
+  currency: "USD" | "BDT";
+  notes: string | null;
+}
+
+export type DiscountTarget = "quote" | "subscription" | "hosting";
+export type DiscountKind = "percent" | "fixed";
+export type DiscountState =
+  | "requested"
+  | "approved"
+  | "denied"
+  | "applied"
+  | "expired";
+
+export interface Discount {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  target_type: DiscountTarget;
+  /** Quote id, concierge property id, or quote id (hosting). */
+  target_id: string;
+  customer_label: string;
+  /** price_items.key, or 'concierge-subscription' for rail A. */
+  product: string;
+  kind: DiscountKind;
+  /** Percent: whole percent 1–100. Fixed: minor units. */
+  value_minor: number;
+  currency: "USD" | "BDT" | null;
+  duration_kind: "once" | "ongoing" | "months";
+  duration_months: number | null;
+  reason: string;
+  state: DiscountState;
+  below_floor: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
+  applied_at: string | null;
+  consumed_at: string | null;
+  stripe_coupon_id: string | null;
+  stripe_subscription_id: string | null;
+  last_error: string | null;
+}
