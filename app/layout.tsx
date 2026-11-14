@@ -7,11 +7,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://suitescout.vivereply.com"),
   title: {
-    default: "SuiteScout — ViveReply's Resort PMS sales agent",
-    template: "%s · SuiteScout",
+    default: "ViveReply Admin — operator console",
+    template: "%s · ViveReply Admin",
   },
   description:
-    "SuiteScout researches prospect resorts, scores fit for ViveReply Suite, drafts outreach, and logs it on a CRM board. A human approves every send.",
+    "ViveReply Admin — the operator console for the ViveReply business: sales pipeline, customers, invoices and health.",
   icons: {
     icon: [
       { url: "/brand/favicon.svg", type: "image/svg+xml" },
@@ -40,10 +40,10 @@ export default function RootLayout({
               <Logo size={34} />
               <span className="leading-none">
                 <span className="block text-[19px] font-extrabold tracking-tight text-ink">
-                  Suite<span className="text-accent">Scout</span>
+                  ViveReply <span className="text-accent">Admin</span>
                 </span>
                 <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-                  Resort PMS sales-ops
+                  Operator console
                 </span>
               </span>
             </Link>

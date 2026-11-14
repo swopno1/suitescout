@@ -45,7 +45,7 @@ export default async function ScoutPage({
         <h1 className="text-xl font-semibold text-brand-dark">Scout</h1>
         <p className="mt-1 text-sm text-stone-600">
           Name a town, watch the area turn into leads. Findings land here
-          live, then live on the board.
+          live, then live in the sales pipeline.
         </p>
       </div>
 

@@ -9,7 +9,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const USERNAME = "demo";
+// Admin identity is env-driven (S1): APP_USER names the account,
+// APP_PASSWORD is the secret. Both are REQUIRED — unset or empty
+// either one and nobody can log in (fail closed).
 /** Throttle: max failures per IP per window before 429. In-memory —
  *  one container instance, so one map is the whole store. */
 const FAIL_WINDOW_MS = 10 * 60 * 1000;
@@ -29,9 +31,10 @@ function secretsEqual(a: string, b: string): boolean {
 }
 
 export async function POST(req: Request) {
+  const username = process.env.APP_USER;
   const secret = process.env.APP_PASSWORD;
   const ip = clientIp(req);
-  if (!secret) {
+  if (!username || !secret) {
     authLog(ip, "login_unconfigured");
     return NextResponse.json(
       { error: "Server login is not configured." },
@@ -59,7 +62,7 @@ export async function POST(req: Request) {
   const ok =
     typeof body.username === "string" &&
     typeof body.password === "string" &&
-    body.username === USERNAME &&
+    secretsEqual(body.username, username) &&
     secretsEqual(body.password, secret);
   if (!ok) {
     recent.push(now);

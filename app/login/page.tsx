@@ -26,8 +26,10 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = safeNext(params.next);
   const secret = process.env.APP_PASSWORD;
+  const configured = Boolean(process.env.APP_USER && secret);
   const session = (await cookies()).get(SESSION_COOKIE)?.value;
   if (
+    configured &&
     secret &&
     session &&
     (await verifySessionValue(secret, session))
@@ -42,20 +44,20 @@ export default async function LoginPage({
           <Logo size={44} />
           <div className="leading-none">
             <p className="text-[22px] font-extrabold tracking-tight text-ink">
-              Suite<span className="text-accent">Scout</span>
+              ViveReply <span className="text-accent">Admin</span>
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-              Resort PMS sales-ops
+              Operator console
             </p>
           </div>
         </div>
         <h1 className="mb-1 text-lg font-bold">Log in</h1>
         <p className="mb-4 text-sm text-stone-600">
-          SuiteScout researches resort prospects, scores them, and
-          drafts the first message — you approve, it sends. Log in
-          with the demo credentials from the submission.
+          The operator console for the ViveReply business: sales
+          pipeline, customers, invoices and health. Log in with the
+          admin credentials from the server environment.
         </p>
-        <LoginForm next={next} configured={Boolean(secret)} />
+        <LoginForm next={next} configured={configured} />
       </div>
       <p className="mt-3 text-center text-xs text-stone-500">
         Sessions last 12 hours on this device.

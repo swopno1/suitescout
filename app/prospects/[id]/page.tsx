@@ -341,10 +341,10 @@ export default async function ProspectDetailPage({
     <div>
       <p className="mb-3 text-sm">
         <Link
-          href="/board"
+          href="/sales"
           className="font-semibold text-brand hover:underline"
         >
-          ← Back to board
+          ← Back to sales
         </Link>
       </p>
 
