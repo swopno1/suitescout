@@ -177,3 +177,17 @@ export const AGENT_STEPS = [
   "Log",
   "Follow up",
 ] as const;
+
+/** S3 audit spine: one row per admin write against another system.
+ *  No admin write exists without a row here (see lib/concierge-write). */
+export interface AdminAction {
+  id: number;
+  at: string;
+  actor: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  reason: string;
+}
