@@ -11,6 +11,9 @@ import LogoutButton from "@/components/LogoutButton";
 const LINKS = [
   { href: "/board", label: "Board" },
   { href: "/customers", label: "Customers" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/quotes", label: "Quotes" },
+  { href: "/discounts", label: "Discounts" },
   { href: "/sales", label: "Sales" },
   { href: "/scout", label: "Scout" },
   { href: "/run", label: "Runs" },

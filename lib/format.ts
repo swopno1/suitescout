@@ -31,3 +31,22 @@ export function formatWhen(iso: string, nowMs?: number): string {
   if (!Number.isFinite(ms)) return iso;
   return `${dhakaFmt.format(new Date(ms))} · ${relativeAge(iso, nowMs)}`;
 }
+
+// S4 money: minor units in, display string out. USD cents → $49;
+// BDT poisha → ৳24,999 (whole-taka figures show no decimals).
+export function formatMoney(
+  minor: number | null,
+  currency: "USD" | "BDT",
+): string {
+  if (minor === null) return "—";
+  if (currency === "USD") {
+    const dollars = minor / 100;
+    return Number.isInteger(dollars)
+      ? `$${dollars.toLocaleString("en-US")}`
+      : `$${dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  const taka = minor / 100;
+  return Number.isInteger(taka)
+    ? `৳${taka.toLocaleString("en-US")}`
+    : `৳${taka.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}

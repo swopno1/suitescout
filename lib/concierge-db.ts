@@ -330,6 +330,7 @@ export interface CustomerRow {
   manualPlan: string | null;
   manualPeriodEnd: string | null;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
 }
 
 interface CustomerQueryRow {
@@ -348,6 +349,7 @@ interface CustomerQueryRow {
   cancelAtPeriodEnd: boolean | null;
   overageAgreed: boolean | null;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
   suiteBaseUrl: string | null;
   lastTestedAt: Date | null;
   lastTestOk: boolean | null;
@@ -363,6 +365,7 @@ const CUSTOMER_SELECT = `
     s."trialEndsAt" AS "trialEndsAt", s."currentPeriodEnd" AS "currentPeriodEnd",
     s."cancelAtPeriodEnd" AS "cancelAtPeriodEnd", s."overageAgreed" AS "overageAgreed",
     s."stripeCustomerId" AS "stripeCustomerId",
+    s."stripeSubscriptionId" AS "stripeSubscriptionId",
     b."suiteBaseUrl" AS "suiteBaseUrl", b."lastTestedAt" AS "lastTestedAt",
     b."lastTestOk" AS "lastTestOk",
     (SELECT COALESCE(array_agg(u.email ORDER BY u.email), '{}')
@@ -437,6 +440,7 @@ function mapCustomerRow(r: CustomerQueryRow, now: Date): CustomerRow {
     manualPlan: r.manualPlan,
     manualPeriodEnd,
     stripeCustomerId: r.stripeCustomerId,
+    stripeSubscriptionId: r.stripeSubscriptionId,
   };
 }
 

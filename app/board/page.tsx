@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { countDrafts, countFollowups, listProspects } from "@/lib/db";
+import {
+  countDrafts,
+  countFollowups,
+  listDiscounts,
+  listPriceItems,
+  listProspects,
+} from "@/lib/db";
 import { getConciergeSnapshot } from "@/lib/concierge-db";
+import { boardDiscountRollup, discountListFigure } from "@/lib/discounts";
+import { formatMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +29,20 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 }
 
 export default async function BoardPage() {
-  const [prospects, draftsReady, followupsSet, concierge] =
+  const [prospects, draftsReady, followupsSet, concierge, discounts, priceItems] =
     await Promise.all([
       listProspects(),
       countDrafts(),
       countFollowups(),
       getConciergeSnapshot(),
+      listDiscounts().catch(() => []),
+      listPriceItems().catch(() => []),
     ]);
+  const rollup = boardDiscountRollup(
+    discounts,
+    (d) => discountListFigure(d, priceItems, () => null),
+    new Date(),
+  );
   const bandCount = (b: string) =>
     prospects.filter((p) => p.score_band === b).length;
   const inTalks = prospects.filter(
@@ -174,6 +189,37 @@ export default async function BoardPage() {
             </p>
           </>
         )}
+      </section>
+
+      <section className="card" aria-label="Discounts">
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold">Discounts</h2>
+          <Link
+            href="/discounts"
+            className="text-sm font-semibold text-brand hover:underline"
+          >
+            All discounts →
+          </Link>
+        </div>
+        <dl className="flex flex-wrap gap-x-8 gap-y-2">
+          <Stat value={rollup.activeCount} label="Active" />
+          {rollup.fixedByCurrency.map((f) => (
+            <Stat
+              key={f.currency}
+              value={formatMoney(f.minor, f.currency)}
+              label={`Fixed given this month (${f.currency})`}
+            />
+          ))}
+          {rollup.percentCount > 0 && rollup.percentEstimateCurrency && (
+            <Stat
+              value={`≈${formatMoney(rollup.percentEstimateMinor, rollup.percentEstimateCurrency)}`}
+              label={`Percent given this month (${rollup.percentCount}, ≈ current list)`}
+            />
+          )}
+          {rollup.unvaluedCount > 0 && (
+            <Stat value={rollup.unvaluedCount} label="Unvalued this month" />
+          )}
+        </dl>
       </section>
 
       <div className="grid gap-4 md:grid-cols-2">
