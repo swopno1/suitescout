@@ -1,6 +1,6 @@
-// Login form — fixed username `demo`, shared secret from APP_PASSWORD.
-// On success the server sets the session cookie; a hard navigation
-// carries it to the destination.
+// Login form — username + password against the env-driven admin
+// identity (APP_USER / APP_PASSWORD). On success the server sets
+// the session cookie; a hard navigation carries it to the destination.
 "use client";
 
 import { useState } from "react";
@@ -12,6 +12,7 @@ export default function LoginForm({
   next: string;
   configured: boolean;
 }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +20,8 @@ export default function LoginForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!password) {
-      setError("Enter the password.");
+    if (!username.trim() || !password) {
+      setError("Enter the username and password.");
       return;
     }
     setBusy(true);
@@ -28,7 +29,7 @@ export default function LoginForm({
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "demo", password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
@@ -43,7 +44,8 @@ export default function LoginForm({
   if (!configured) {
     return (
       <p role="alert" className="text-sm font-semibold text-red-700">
-        Server login is not configured — set APP_PASSWORD on the server.
+        Server login is not configured — set APP_USER and APP_PASSWORD
+        on the server.
       </p>
     );
   }
@@ -55,10 +57,11 @@ export default function LoginForm({
       </label>
       <input
         id="login-username"
-        value="demo"
-        readOnly
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         autoComplete="username"
-        className="input mb-3 w-full opacity-70"
+        autoFocus
+        className="input mb-3 w-full"
       />
       <label className="label mb-1 block" htmlFor="login-password">
         Password
@@ -69,7 +72,6 @@ export default function LoginForm({
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         autoComplete="current-password"
-        autoFocus
         className="input mb-3 w-full"
       />
       <button type="submit" disabled={busy} className="btn-accent w-full">
