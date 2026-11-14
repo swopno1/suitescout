@@ -66,7 +66,15 @@ export default async function BoardPage() {
       </section>
 
       <section className="card" aria-label="Customers">
-        <h2 className="mb-1 text-lg font-bold">Customers</h2>
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold">Customers</h2>
+          <Link
+            href="/customers"
+            className="text-sm font-semibold text-brand hover:underline"
+          >
+            All customers →
+          </Link>
+        </div>
         {concierge.status === "unconfigured" && (
           <p className="text-sm text-stone-600">
             Concierge link not configured. Set CONCIERGE_DATABASE_URL
@@ -142,8 +150,27 @@ export default async function BoardPage() {
                 )}
               </div>
             </div>
+            <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2 border-t border-stone-100 pt-3">
+              <Stat
+                value={
+                  concierge.snapshot.stripeActive.length === 0
+                    ? "0"
+                    : concierge.snapshot.stripeActive
+                        .map((r) => `${r.count} ${r.interval.toLowerCase()}`)
+                        .join(" + ")
+                }
+                label="Stripe-active properties"
+              />
+              <Stat
+                value={concierge.snapshot.manualLive}
+                label="Manual billing live"
+              />
+            </dl>
             <p className="mt-3 text-xs text-stone-500">
-              Deeper customer analytics land in S2.
+              MRR is not estimated: Concierge prices are not locked
+              anywhere (the pricing worksheet holds no figures — S4
+              owns pricing). Manual/BD arrangements never enter a
+              Stripe-based figure.
             </p>
           </>
         )}
